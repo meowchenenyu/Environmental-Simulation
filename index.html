@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f3e9">
+  <meta name="description" content="打造一座島，觀察生命如何彼此影響。互動式虛擬生態系模擬器。">
+  <title>群島觀察誌 — 虛擬生態系</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="#top" aria-label="群島觀察誌首頁"><span class="brand-mark">✳</span><span>群島<span class="brand-light">觀察誌</span></span></a>
+      <div class="side-label">工作區</div>
+      <nav class="main-nav" aria-label="主要導覽">
+        <a class="nav-item active" href="#habitat"><span>▦</span> 生態總覽</a>
+        <a class="nav-item" href="#species"><span>♧</span> 物種圖鑑</a>
+        <a class="nav-item" href="#insights"><span>⌁</span> 觀察紀錄</a>
+      </nav>
+      <div class="sidebar-card"><div class="mini-island">🌴</div><strong>潮汐之間</strong><span>熱帶島嶼・第 24 天</span><div class="side-progress"><i></i></div><small>生態穩定度 <b id="side-stability">78%</b></small></div>
+      <div class="sidebar-bottom"><span class="status-dot"></span> 模擬已自動保存</div>
+    </aside>
+
+    <main id="top" class="main-content">
+      <header class="topbar"><div class="breadcrumbs">我的島嶼 <span>/</span> <strong>潮汐之間</strong></div><div class="top-actions"><button class="icon-button" aria-label="通知">♧<i></i></button><div class="avatar" aria-label="使用者">林</div></div></header>
+
+      <section class="welcome-row"><div><div class="eyebrow"><span class="live-dot"></span> 生態系正在呼吸</div><h1>潮汐之間<span class="title-spark">✳</span></h1><p class="subhead">一座被暖流環抱的島，今天會有什麼新發現？</p></div><button id="edit-island" class="quiet-button">✎ <span>編輯島嶼</span></button></section>
+
+      <section class="stat-grid" aria-label="生態指標">
+        <article class="stat-card"><div class="stat-top"><span>物種數量</span><span class="stat-icon leaf-icon">♧</span></div><div class="stat-number"><strong id="species-count">12</strong><small>種</small></div><div class="stat-foot"><span class="trend-up">↗ 2 種</span> <span>比上週</span></div></article>
+        <article class="stat-card"><div class="stat-top"><span>生態穩定度</span><span class="stat-icon sun-icon">☼</span></div><div class="stat-number"><strong id="stability">78</strong><small>%</small></div><div class="stat-foot"><span class="trend-up">↗ 4%</span> <span>平衡良好</span></div></article>
+        <article class="stat-card"><div class="stat-top"><span>島嶼面積</span><span class="stat-icon wave-icon">⌁</span></div><div class="stat-number"><strong>8.4</strong><small>km²</small></div><div class="stat-foot"><span class="neutral">—</span> <span>海岸線 12.6 km</span></div></article>
+        <article class="stat-card climate-card"><div class="stat-top"><span>島嶼氣候</span><span class="weather-icon">☀</span></div><div class="climate-value"><strong>26°</strong><span>晴朗・微風</span></div><div class="stat-foot">濕度 72% <span class="climate-divider">·</span> 降雨機率 18%</div></article>
+      </section>
+
+      <section id="habitat" class="workspace-grid">
+        <article class="panel map-panel"><div class="panel-heading"><div><div class="section-kicker">你的棲地</div><h2>生態地圖</h2></div><div class="map-actions"><button id="layer-button" class="small-button">▧ <span id="layer-label">地形圖層</span>⌄</button><button id="expand-map" class="small-square" aria-label="放大地圖">⛶</button></div></div>
+          <div class="map-wrap"><div class="map-label map-label-north">北灣 <span>·</span> 淺海</div><div class="map-label map-label-east">珊瑚礁</div><svg class="island-map" viewBox="0 0 720 390" role="img" aria-label="潮汐之間島嶼生態地圖">
+            <defs><pattern id="sea" width="34" height="26" patternUnits="userSpaceOnUse"><path d="M0 13 Q8 8 17 13 T34 13" fill="none" stroke="#7ab3aa" stroke-opacity=".28" stroke-width="1.5"/></pattern><linearGradient id="land" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#c4d59a"/><stop offset=".55" stop-color="#91b781"/><stop offset="1" stop-color="#739b78"/></linearGradient><filter id="shadow" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#23564e" flood-opacity=".2"/></filter></defs>
+            <rect width="720" height="390" fill="#9ccac1"/><rect width="720" height="390" fill="url(#sea)"/>
+            <path d="M183 79 C218 50 265 67 293 61 C328 50 365 67 390 80 C427 74 451 95 479 103 C508 113 511 140 535 159 C558 177 537 204 546 224 C552 249 522 266 512 285 C493 317 456 311 431 324 C402 341 375 321 346 330 C319 337 294 316 269 318 C239 318 219 295 191 286 C166 276 157 250 151 228 C142 207 157 184 148 161 C142 137 163 119 164 101 C164 91 171 85 183 79Z" fill="url(#land)" stroke="#e7dfb5" stroke-width="12" filter="url(#shadow)"/>
+            <path d="M183 79 C218 50 265 67 293 61 C328 50 365 67 390 80 C427 74 451 95 479 103 C508 113 511 140 535 159 C558 177 537 204 546 224 C552 249 522 266 512 285 C493 317 456 311 431 324 C402 341 375 321 346 330 C319 337 294 316 269 318 C239 318 219 295 191 286 C166 276 157 250 151 228 C142 207 157 184 148 161 C142 137 163 119 164 101 C164 91 171 85 183 79Z" fill="url(#land)"/>
+            <path d="M229 105 Q274 86 311 91 Q348 74 384 102 Q418 92 449 123 Q479 134 489 163 Q516 185 499 208 Q511 238 481 259 Q463 288 430 283 Q399 308 365 292 Q334 312 306 286 Q269 296 249 268 Q215 259 213 229 Q187 209 204 180 Q189 150 213 132Z" fill="#79a783" opacity=".64"/>
+            <path d="M277 106 Q305 89 329 107 Q352 111 356 134 Q375 155 357 170 Q346 192 321 185 Q302 204 282 187 Q259 185 256 164 Q239 147 255 130 Q257 112 277 106Z" fill="#7c9c83" opacity=".9"/><path d="M355 135 Q369 119 389 130 Q407 122 418 140 Q434 148 426 166 Q426 184 407 188 Q392 204 375 189 Q355 189 352 171 Q339 154 355 135Z" fill="#87ac86"/>
+            <path d="M180 214 Q208 199 233 215 Q248 231 231 250 Q208 264 187 249Z" fill="#71b9b0" stroke="#d9dfb4" stroke-width="3"/><path d="M409 228 Q430 209 448 226 Q461 244 444 260 Q421 266 409 250Z" fill="#72b9b0" stroke="#d9dfb4" stroke-width="3"/>
+            <g class="tree-patches" fill="#3f745e"><circle cx="285" cy="126" r="10"/><circle cx="302" cy="118" r="8"/><circle cx="315" cy="133" r="12"/><circle cx="294" cy="145" r="10"/><circle cx="329" cy="147" r="8"/><circle cx="390" cy="151" r="10"/><circle cx="405" cy="155" r="9"/><circle cx="390" cy="169" r="8"/><circle cx="376" cy="158" r="7"/><circle cx="453" cy="190" r="8"/><circle cx="464" cy="200" r="9"/><circle cx="445" cy="204" r="7"/><circle cx="262" cy="231" r="9"/><circle cx="277" cy="239" r="7"/><circle cx="267" cy="251" r="8"/></g>
+            <g class="map-creatures"><g transform="translate(311 169)"><circle r="14" fill="#f7e5bb"/><text y="5" text-anchor="middle" font-size="16">🦜</text></g><g transform="translate(432 169)"><circle r="13" fill="#f7e5bb"/><text y="5" text-anchor="middle" font-size="15">🦋</text></g><g transform="translate(247 194)"><circle r="13" fill="#f7e5bb"/><text y="5" text-anchor="middle" font-size="15">🐢</text></g><g transform="translate(379 239)"><circle r="13" fill="#f7e5bb"/><text y="5" text-anchor="middle" font-size="15">🦎</text></g><g transform="translate(467 234)"><circle r="13" fill="#f7e5bb"/><text y="5" text-anchor="middle" font-size="15">🦀</text></g><g transform="translate(338 271)"><circle r="13" fill="#f7e5bb"/><text y="5" text-anchor="middle" font-size="15">🐸</text></g></g>
+            <path d="M608 63 l0 28 M608 55 l-7 13 h14Z" stroke="#f8f4df" stroke-width="2" fill="#f8f4df"/><text x="608" y="105" text-anchor="middle" font-size="11" fill="#f8f4df" font-family="sans-serif">N</text>
+          </svg><div class="map-legend"><span><i class="legend-dot forest"></i>熱帶雨林</span><span><i class="legend-dot wetland"></i>淡水濕地</span><span><i class="legend-dot coast"></i>珊瑚海岸</span><span class="legend-creature">🐾 物種分布</span></div><div class="map-zoom"><button aria-label="放大">＋</button><button aria-label="縮小">−</button></div></div>
+          <div class="map-footer"><span>📍 點選地圖上的生物，查看棲地觀察</span><button id="observe-map">開始觀察 <span>→</span></button></div>
+        </article>
+        <aside class="right-column"><article class="panel sim-panel"><div class="panel-heading compact"><div><div class="section-kicker">時間控制</div><h2>模擬進度</h2></div><span class="season-tag">☀ 夏季</span></div><div class="day-display"><div><span>島嶼時間</span><strong>第 <b id="day-count">24</b> 天</strong></div><div class="day-moon">◔</div></div><div class="timeline"><span>第 1 天</span><div class="timeline-track"><i id="timeline-progress"></i></div><span id="timeline-day">24</span></div><div class="sim-controls"><button id="step-back" class="control-button" aria-label="倒退一天">↶</button><button id="play-simulation" class="play-button" aria-label="播放模擬">▶</button><button id="step-forward" class="control-button" aria-label="前進一天">↷</button><button id="speed-button" class="speed-button">1× <span>⌄</span></button></div><div id="sim-message" class="sim-note">島上的生命正穩定成長，繼續觀察吧。</div></article>
+          <article class="panel event-panel"><div class="panel-heading compact"><div><div class="section-kicker">剛剛發生</div><h2>島嶼日誌</h2></div><button class="text-button" id="all-events">全部紀錄 →</button></div><div class="event-list" id="event-list"><div class="event-item"><span class="event-badge bird">🐦</span><div><strong>藍冠鴿孵化了</strong><p>新生命在北方林地誕生</p></div><time>今天 09:42</time></div><div class="event-item"><span class="event-badge rain">☂</span><div><strong>午後短暫降雨</strong><p>淡水濕地水位上升 6%</p></div><time>今天 08:10</time></div><div class="event-item"><span class="event-badge leaf">♧</span><div><strong>蕨類進入繁盛期</strong><p>森林植被覆蓋增加</p></div><time>昨天</time></div></div></article></aside>
+      </section>
+
+      <section class="lower-grid"><article id="species" class="panel species-panel"><div class="panel-heading"><div><div class="section-kicker">島嶼居民</div><h2>今日物種觀察</h2></div><button class="text-button" id="open-species">查看圖鑑 <span>→</span></button></div><div class="species-list"><button class="species-card"><span class="species-art parrot">🦜</span><span class="species-info"><strong>藍冠鴿</strong><small>森林・雜食性</small></span><span class="species-pop"><b>24</b><small>隻</small></span><span class="species-change positive">↗ 3</span></button><button class="species-card"><span class="species-art turtle">🐢</span><span class="species-info"><strong>綠蠵龜</strong><small>海岸・草食性</small></span><span class="species-pop"><b>18</b><small>隻</small></span><span class="species-change positive">↗ 1</span></button><button class="species-card"><span class="species-art frog">🐸</span><span class="species-info"><strong>雨林樹蛙</strong><small>濕地・昆蟲食</small></span><span class="species-pop"><b>42</b><small>隻</small></span><span class="species-change neutral">— 0</span></button><button class="species-card"><span class="species-art butterfly">🦋</span><span class="species-info"><strong>月光鳳蝶</strong><small>林緣・傳粉者</small></span><span class="species-pop"><b>31</b><small>隻</small></span><span class="species-change positive">↗ 5</span></button></div></article>
+        <article id="insights" class="panel insight-panel"><div class="panel-heading"><div><div class="section-kicker">過去 7 天</div><h2>生命力趨勢</h2></div><button class="small-button">最近一週⌄</button></div><div class="chart-legend"><span><i class="legend-line teal"></i>生物多樣性</span><span><i class="legend-line gold"></i>棲地健康</span></div><div class="chart-wrap"><div class="chart-y"><span>100</span><span>75</span><span>50</span><span>25</span></div><svg class="chart" viewBox="0 0 450 150" preserveAspectRatio="none" role="img" aria-label="生物多樣性與棲地健康一週趨勢圖"><defs><linearGradient id="area" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#65a99b" stop-opacity=".18"/><stop offset="1" stop-color="#65a99b" stop-opacity="0"/></linearGradient></defs><path class="gridline" d="M0 20H450 M0 57H450 M0 94H450 M0 131H450"/><path class="area" d="M0 89 C25 83 34 79 64 82 S96 71 128 75 S160 65 192 68 S224 55 256 61 S290 48 320 51 S355 39 384 45 S418 30 450 34 L450 150 L0 150Z"/><path class="line line-teal" d="M0 89 C25 83 34 79 64 82 S96 71 128 75 S160 65 192 68 S224 55 256 61 S290 48 320 51 S355 39 384 45 S418 30 450 34"/><path class="line line-gold" d="M0 110 C28 106 38 99 64 103 S97 91 128 96 S162 85 192 91 S224 77 256 82 S288 73 320 76 S352 61 384 68 S418 56 450 59"/><circle cx="450" cy="34" r="4" fill="#4e9185" stroke="white" stroke-width="2"/></svg></div><div class="chart-x"><span>11/08</span><span>11/10</span><span>11/12</span><span>11/14</span><span>11/15</span></div><div class="insight-tip"><span>✦</span><p>生物多樣性持續上升，<strong>濕地水位</strong>可能是關鍵因素。</p></div></article></section>
+      <footer class="page-footer"><span>✳ 群島觀察誌 <small>讓每個微小生命，都有自己的故事。</small></span><span>版本 0.1 <i>·</i> 原型體驗</span></footer>
+    </main>
+  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
