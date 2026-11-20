@@ -1,6 +1,6 @@
 # 群島觀察誌
 
-虛擬生態系模擬器的互動式前端原型。使用純 HTML、CSS 與 JavaScript，無需建置步驟，可直接部署到 GitHub Pages。
+虛擬生態系模擬器的互動式前端原型。使用純 HTML、CSS 與 JavaScript，無需建置步驟，可直接部署到 GitHub Pages。包含可編輯島嶼地形的原型工具，生態族群模擬仍在開發路線圖中。
 
 ## 本機預覽
 
@@ -18,3 +18,6 @@ GitHub Actions workflow 位於 `.github/workflows/deploy.yml`。推送到 `main`
 - `styles.css`：響應式版面與視覺樣式。
 - `app.js`：模擬時間控制、物種觀察、圖層切換等原型互動。
 - `knowledge/plan.md`：產品願景與開發路線圖。
+- `knowledge/experience.md`：開發經驗、限制與未來可套用範圍。
+
+地形筆刷支援森林、草原、濕地與沙灘；修改保存在目前瀏覽器的 localStorage，不會自動同步至其他裝置。

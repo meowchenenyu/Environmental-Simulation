@@ -4,3 +4,25 @@
 @media(max-width:1120px){.main-content{padding:0 24px 20px}.sidebar{width:205px}.main-content{margin-left:205px}.workspace-grid{grid-template-columns:minmax(0,1.4fr) minmax(280px,1fr)}.map-wrap{height:245px}.stat-card{padding:12px}.species-list{grid-template-columns:1fr}.species-card:nth-child(n+3){display:none}}
 @media(max-width:800px){.sidebar{width:62px;padding:20px 8px}.brand{padding:2px 7px 30px}.brand>span:last-child,.side-label,.nav-item:not(.active),.nav-item.active{font-size:0}.nav-item{height:39px;padding:9px;text-align:center}.nav-item span{font-size:17px;width:auto}.sidebar-card{margin:25px 0 0;padding:5px;background:transparent;border:0}.sidebar-card>*:not(.mini-island){display:none}.mini-island{height:40px;font-size:21px}.sidebar-bottom{font-size:0;padding:8px 17px}.status-dot{margin:0}.main-content{margin-left:62px;padding:0 17px 18px}.workspace-grid{grid-template-columns:1fr}.right-column{display:grid;grid-template-columns:1fr 1fr}.map-wrap{height:300px}.lower-grid{grid-template-columns:1fr}.species-list{grid-template-columns:1fr 1fr}.species-card:nth-child(n+3){display:flex}}
 @media(max-width:540px){.main-content{padding-left:12px;padding-right:12px}.topbar{height:55px}.welcome-row{padding:22px 0 17px;align-items:center}.welcome-row h1{font-size:24px}.subhead{max-width:230px;line-height:1.6}.quiet-button{padding:7px 9px}.quiet-button span{display:none}.stat-grid{grid-template-columns:1fr 1fr;gap:8px}.stat-card{min-height:94px;padding:11px}.stat-number strong{font-size:22px}.workspace-grid,.lower-grid{gap:9px}.panel{padding:13px}.map-wrap{height:235px}.map-legend{gap:7px;padding:7px}.map-legend span{font-size:7px}.right-column{grid-template-columns:1fr}.event-panel{display:none}.species-list{gap:6px}.species-card{gap:6px;padding:6px}.species-art{width:27px;height:27px;font-size:16px}.species-info strong{font-size:8px}.species-info small{font-size:7px}.species-change{display:none}.page-footer small{display:block;padding:4px 0 0}.page-footer{font-size:8px}}
+
+/* Island terrain editor */
+.editor-toolbar{display:flex;align-items:center;gap:5px;flex-wrap:wrap;padding:8px 9px;margin:0 0 10px;background:#f6f7ef;border:1px solid #eceee4;border-radius:8px}
+.editor-toolbar[hidden]{display:none}
+.editor-caption{font-size:9px;color:#89958b;font-weight:600;padding:0 5px 0 1px}
+.terrain-tool,.editor-history{display:flex;align-items:center;gap:5px;height:27px;border:1px solid transparent;border-radius:6px;background:transparent;padding:0 7px;color:#718077;font-size:9px;cursor:pointer}
+.terrain-tool:hover,.editor-history:not(:disabled):hover{background:white;border-color:#e3e8dc}
+.terrain-tool.selected{background:#fffefa;border-color:#cbdcc9;color:#456e56;box-shadow:0 1px 3px #344b3810}
+.terrain-swatch{width:9px;height:9px;border-radius:3px;display:inline-block}
+.forest-swatch{background:#467c5e}.grass-swatch{background:#a7bc6a}.wetland-swatch{background:#58aaa0}.sand-swatch{background:#ddc47f}
+.editor-divider{height:16px;border-left:1px solid #dfe3d8;margin:0 3px}
+.editor-history{justify-content:center;width:27px;padding:0;font-size:15px}
+.editor-history:disabled{opacity:.35;cursor:default}
+.editor-save-state{margin-left:auto;color:#92a08e;font-size:8px;white-space:nowrap}
+.island-map{transform-origin:center;transition:transform .18s ease}
+.map-panel.editing .island-map{touch-action:none;cursor:crosshair}
+.map-panel.editing #terrain-layer rect{stroke:#fffefa;stroke-opacity:.68;stroke-width:1;vector-effect:non-scaling-stroke}
+#terrain-layer,.map-creatures{pointer-events:none}
+#terrain-layer rect{pointer-events:all}
+#selected-cell{fill:none;stroke:#fffefa;stroke-width:3;stroke-dasharray:4 2;vector-effect:non-scaling-stroke;pointer-events:none;filter:drop-shadow(0 1px 2px #315e51)}
+.map-panel.editing .map-legend{display:none}
+@media(max-width:540px){.editor-toolbar{gap:3px;padding:7px 6px}.editor-caption{width:100%;padding-bottom:2px}.terrain-tool{padding:0 5px}.editor-save-state{font-size:7px}}
