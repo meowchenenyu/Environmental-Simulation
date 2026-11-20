@@ -1,13 +1,16 @@
 (() => {
   const $ = (selector) => document.querySelector(selector);
-  let day = 24;
   let playing = false;
   let speed = 1;
   let timer = null;
-  let stability = 78;
   let toastTimer;
+  let activeChart = 'richness';
+  const EcosystemSimulation = window.EcosystemSimulation;
+  const simulationStorageKey = 'archipelago-observatory:tidal-between:simulation:v1';
+  let simulationState = EcosystemSimulation.createInitialState();
+  let simulationHistory = [];
   const terrainColors = { forest: '#356f50', grass: '#a7bc6a', wetland: '#48a9a5', sand: '#dfc783' };
-  const terrainNames = { forest: '森林', grass: '草原', wetland: '濕地', sand: '沙灘' };
+  const terrainNames = { forest: '森林', grass: '草原', wetland: '濕地', sand: '沙灘', unsuitable: '無適宜棲地' };
   const storageKey = 'archipelago-observatory:tidal-between:terrain:v1';
   let selectedTerrain = 'forest';
   let selectedCell = null;
@@ -23,6 +26,18 @@
     terrain = {};
   }
 
+  try {
+    const savedSimulation = JSON.parse(localStorage.getItem(simulationStorageKey) || 'null');
+    if (savedSimulation?.state?.populations && Array.isArray(savedSimulation.state.events)) {
+      simulationState = savedSimulation.state;
+      simulationHistory = Array.isArray(savedSimulation.history) ? savedSimulation.history.slice(-30) : [];
+    }
+  } catch {
+    simulationState = EcosystemSimulation.createInitialState();
+    simulationHistory = [];
+  }
+  simulationState = EcosystemSimulation.syncHabitat(simulationState, terrain);
+
   function toast(message) {
     const el = $('#toast');
     el.textContent = message;
@@ -32,22 +47,147 @@
   }
 
   function renderDay() {
+    const { day, environment, resources, populations, events } = simulationState;
+    const metrics = EcosystemSimulation.metricsFor(simulationState);
     $('#day-count').textContent = day;
     $('#timeline-day').textContent = day;
-    $('#timeline-progress').style.width = `${Math.min(95, Math.max(3, day))}%`;
-    const messages = [
-      '島上的生命正穩定成長，繼續觀察吧。',
-      '暖流帶來豐富水氣，植物生長加快了。',
-      '林間傳來鳥鳴，幾個新巢正在形成。',
-      '午後降雨滋養濕地，蛙類活動增加。',
-      '海岸潮間帶出現新的覓食痕跡。'
-    ];
-    $('#sim-message').textContent = messages[day % messages.length];
-    if (day % 3 === 0) {
-      stability = Math.min(99, stability + 1);
-      $('#stability').textContent = stability;
-      $('#side-stability').textContent = `${stability}%`;
+    $('#timeline-progress').style.width = `${Math.min(95, Math.max(3, day % 100))}%`;
+    $('#stability').textContent = metrics.stability;
+    $('#side-stability').textContent = `${metrics.stability}%`;
+    $('#side-progress').style.width = `${metrics.stability}%`;
+    $('#sidebar-day').textContent = `熱帶島嶼・第 ${day} 天`;
+    $('#species-count').textContent = metrics.richness;
+    $('#species-status').textContent = metrics.richness === EcosystemSimulation.species.length ? '生產者與消費者皆有族群' : '有物種族群已消失';
+    $('#stability-caption').textContent = metrics.stability >= 75 ? '資源供應良好' : metrics.stability >= 55 ? '部分資源偏低' : '生態系承受壓力';
+    $('#temperature').textContent = `${environment.temperature}°`;
+    $('#humidity').textContent = environment.humidity;
+    $('#rainfall').textContent = environment.rainfall;
+    $('#weather-icon').textContent = environment.rainfall >= 82 ? '☂' : '☀';
+    $('#weather-summary').textContent = environment.rainfall >= 82 ? '降雨・水氣充足' : '晴朗・微風';
+    const seasonIcons = { 春季: '❀', 夏季: '☀', 秋季: '🍂', 冬季: '❄' };
+    $('#season-tag').textContent = `${seasonIcons[simulationState.season]} ${simulationState.season}`;
+    const strongestChange = events[0];
+    $('#sim-message').textContent = strongestChange
+      ? `${strongestChange.title}：${strongestChange.detail}`
+      : `草叢 ${resources['island-grass']}%・海草 ${resources['coastal-seagrass']}%；生態系持續運作。`;
+
+    const previous = simulationHistory.at(-1);
+    document.querySelectorAll('.species-card').forEach((card) => {
+      const id = card.dataset.species;
+      const profile = EcosystemSimulation.species.find((entry) => entry.id === id);
+      const producer = profile?.kind === 'producer';
+      const count = producer ? resources[id] : (populations[id] ?? 0);
+      card.querySelector('.species-pop b').textContent = count;
+      card.querySelector('.species-pop [data-unit]').textContent = profile.unit;
+      const oldCount = producer ? previous?.resources[id] : previous?.populations[id];
+      const delta = oldCount === undefined ? 0 : count - oldCount;
+      const change = card.querySelector('.species-change');
+      change.textContent = delta > 0 ? `↗ ${delta}` : delta < 0 ? `↘ ${Math.abs(delta)}` : '—';
+      change.classList.toggle('positive', delta > 0);
+      change.classList.toggle('negative', delta < 0);
+      change.classList.toggle('neutral', delta === 0);
+    });
+    renderEvents();
+    renderTrendChart();
+  }
+
+  function saveSimulation() {
+    try {
+      localStorage.setItem(simulationStorageKey, JSON.stringify({ state: simulationState, history: simulationHistory.slice(-30) }));
+    } catch {
+      toast('瀏覽器儲存空間不足，模擬進度未能保存。');
     }
+  }
+
+  function renderEvents() {
+    const list = $('#event-list');
+    list.replaceChildren();
+    simulationState.events.slice(0, 3).forEach((event) => {
+      const row = document.createElement('div');
+      row.className = 'event-item';
+      const badge = document.createElement('span');
+      badge.className = 'event-badge';
+      badge.textContent = event.icon;
+      const body = document.createElement('div');
+      const title = document.createElement('strong');
+      title.textContent = event.title;
+      const detail = document.createElement('p');
+      detail.textContent = event.detail;
+      body.append(title, detail);
+      const time = document.createElement('time');
+      time.textContent = `第 ${event.day} 天`;
+      row.append(badge, body, time);
+      list.appendChild(row);
+    });
+  }
+
+  function renderTrendChart() {
+    const history = simulationState.series.slice(-7);
+    if (!history.length) return;
+
+    const settings = {
+      richness: {
+        primary: '物種多樣性', secondary: '生態穩定度',
+        first: (point) => point.richness / EcosystemSimulation.species.length * 100,
+        second: (point) => point.stability,
+        current: `${EcosystemSimulation.metricsFor(simulationState).richness} / ${EcosystemSimulation.species.length} 種`
+      },
+      population: {
+        primary: '動物族群總數', secondary: '掠食者數量',
+        first: (point) => point.population / 310 * 100,
+        second: (point) => point.predators / 25 * 100,
+        current: `${pointPopulation(simulationState)} 隻動物`
+      },
+      vegetation: {
+        primary: '平均植被覆蓋', secondary: '花蜜資源',
+        first: (point) => point.vegetation,
+        second: () => simulationState.resources.nectar,
+        current: `${Math.round((simulationState.resources['island-grass'] + simulationState.resources['coastal-seagrass']) / 2)}% 平均覆蓋`
+      }
+    }[activeChart];
+    const line = (values) => values.map((value, index) => `${index ? 'L' : 'M'} ${(index * 450 / Math.max(1, values.length - 1)).toFixed(1)} ${(131 - Math.max(0, Math.min(100, value)) * 1.1).toFixed(1)}`).join(' ');
+    const primaryValues = history.map(settings.first);
+    const secondaryValues = history.map(settings.second);
+    const primaryPath = line(primaryValues);
+    const secondaryPath = line(secondaryValues);
+    $('#chart-primary').setAttribute('d', primaryPath);
+    $('#chart-secondary').setAttribute('d', secondaryPath);
+    $('#chart-area').setAttribute('d', history.length > 1 ? `${primaryPath} L450 150 L0 150Z` : 'M0 150Z');
+    const point = $('#chart-point');
+    if (history.length === 1) {
+      point.setAttribute('cx', 450);
+      point.setAttribute('cy', 131 - Math.max(0, Math.min(100, primaryValues[0])) * 1.1);
+      point.setAttribute('visibility', 'visible');
+    } else {
+      point.setAttribute('visibility', 'hidden');
+    }
+    $('#legend-primary').textContent = settings.primary;
+    $('#legend-secondary').textContent = settings.secondary;
+    $('#chart-current-value').textContent = settings.current;
+    const positions = [0, 0.25, 0.5, 0.75, 1].map((fraction) => Math.round((history.length - 1) * fraction));
+    document.querySelectorAll('[data-chart-day]').forEach((label, index) => {
+      label.textContent = `第 ${history[positions[index]].day} 天`;
+    });
+    const first = history[0];
+    const last = history[history.length - 1];
+    const delta = last.richness - first.richness;
+    $('#insight-text').textContent = activeChart === 'richness'
+      ? `近 7 日觀察到 ${delta === 0 ? '物種數量維持穩定' : `物種數量${delta > 0 ? '增加' : '減少'} ${Math.abs(delta)} 種`}；圖表會隨模擬推進更新。`
+      : activeChart === 'population'
+        ? `目前掠食者 ${simulationState.populations['island-lizard']} 隻；族群會受食物供應與天敵關係影響。`
+        : `草原覆蓋 ${simulationState.resources['island-grass']}%，海草覆蓋 ${simulationState.resources['coastal-seagrass']}%。`;
+  }
+
+  function pointPopulation(state) {
+    return Object.values(state.populations).reduce((sum, count) => sum + count, 0);
+  }
+
+  function advanceDay() {
+    simulationHistory.push(JSON.parse(JSON.stringify(simulationState)));
+    simulationHistory = simulationHistory.slice(-30);
+    simulationState = EcosystemSimulation.stepSimulation(simulationState, terrain);
+    saveSimulation();
+    renderDay();
   }
 
   function pause() {
@@ -124,6 +264,7 @@
   }
 
   function setEditing(enabled) {
+    if (enabled && playing) pause();
     const mapPanel = $('.map-panel');
     mapPanel.classList.toggle('editing', enabled);
     $('#editor-toolbar').hidden = !enabled;
@@ -176,7 +317,13 @@
     const cell = document.elementFromPoint(event.clientX, event.clientY)?.closest('#terrain-layer [data-cell]');
     if (cell) paintCell(cell.dataset.cell);
   });
-  terrainLayer.addEventListener('pointerup', () => { painting = false; });
+  terrainLayer.addEventListener('pointerup', () => {
+    if (!painting) return;
+    painting = false;
+    simulationState = EcosystemSimulation.syncHabitat(simulationState, terrain);
+    saveSimulation();
+    renderDay();
+  });
   terrainLayer.addEventListener('pointercancel', () => { painting = false; });
 
   $('#undo-terrain').addEventListener('click', () => {
@@ -212,15 +359,30 @@
     $('#play-simulation').textContent = 'Ⅱ';
     $('#play-simulation').classList.add('playing');
     $('#play-simulation').setAttribute('aria-label', '暫停模擬');
-    timer = setInterval(() => { day += 1; renderDay(); }, 2400 / speed);
+    timer = setInterval(advanceDay, 2400 / speed);
   });
-  $('#step-forward').addEventListener('click', () => { day += 1; renderDay(); });
-  $('#step-back').addEventListener('click', () => { day = Math.max(1, day - 1); renderDay(); });
+  $('#step-forward').addEventListener('click', advanceDay);
+  $('#step-back').addEventListener('click', () => {
+    const previous = simulationHistory.pop();
+    if (!previous) return toast('目前已到這次模擬的最早紀錄。');
+    simulationState = EcosystemSimulation.syncHabitat(previous, terrain);
+    saveSimulation();
+    renderDay();
+  });
   $('#speed-button').addEventListener('click', () => {
     speed = speed === 1 ? 2 : speed === 2 ? 4 : 1;
     $('#speed-button').innerHTML = `${speed}× <span>⌄</span>`;
-    if (playing) { clearInterval(timer); timer = setInterval(() => { day += 1; renderDay(); }, 2400 / speed); }
+    if (playing) { clearInterval(timer); timer = setInterval(advanceDay, 2400 / speed); }
   });
+  document.querySelectorAll('.chart-mode').forEach((button) => button.addEventListener('click', () => {
+    activeChart = button.dataset.chart;
+    document.querySelectorAll('.chart-mode').forEach((mode) => {
+      const selected = mode === button;
+      mode.classList.toggle('selected', selected);
+      mode.setAttribute('aria-pressed', String(selected));
+    });
+    renderTrendChart();
+  }));
   $('#layer-button').addEventListener('click', () => {
     const label = $('#layer-label');
     label.textContent = label.textContent === '地形圖層' ? '物種分布' : '地形圖層';
@@ -234,7 +396,11 @@
   $('#open-species').addEventListener('click', () => toast('物種圖鑑正在整理中，先看看今日觀察吧。'));
   document.querySelectorAll('.species-card').forEach((card) => card.addEventListener('click', () => {
     const name = card.querySelector('strong').textContent;
-    toast(`正在觀察：${name}。族群狀態穩定。`);
+    const id = card.dataset.species;
+    const profile = EcosystemSimulation.species.find((entry) => entry.id === id);
+    const shares = simulationState.distribution[id] || {};
+    const habitats = Object.entries(shares).sort((left, right) => right[1] - left[1]).map(([habitat, value]) => `${terrainNames[habitat] || habitat} ${value}%`).join('、');
+    toast(`${name}・${profile.role}・${profile.kind === 'producer' ? '棲地覆蓋 ' + simulationState.resources[id] + '%' : '族群 ' + simulationState.populations[id] + ' 隻'}・偏好棲地：${habitats || profile.habitat}`);
   }));
   document.querySelectorAll('.map-zoom button').forEach((button, index) => button.addEventListener('click', () => {
     const map = $('.island-map');
@@ -242,4 +408,6 @@
     map.dataset.zoom = index === 0 ? Math.min(1.25, current + .08) : Math.max(.92, current - .08);
     map.style.transform = `scale(${map.dataset.zoom})`;
   }));
+
+  renderDay();
 })();
