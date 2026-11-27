@@ -87,8 +87,8 @@
     <div class="tutorial-topline"><span class="section-kicker">本機資料</span><button id="close-storage" class="tutorial-skip">關閉</button></div>
     <h2 id="storage-title">存檔管理</h2>
     <p id="storage-summary" class="tutorial-copy"></p>
-    <div class="storage-actions"><button id="save-now" class="challenge-action">立即保存</button><button id="restart-simulation" class="challenge-action">重新開始模擬</button><button id="restore-terrain" class="challenge-action destructive-action">還原範例地形</button></div>
-    <p class="storage-note">地形與模擬會自動保存在此瀏覽器。重新開始模擬會保留自訂地形；還原範例地形會清除地形筆刷修改。</p>
+    <div class="storage-actions"><button id="save-now" class="challenge-action">立即保存</button><button id="export-save" class="challenge-action">匯出島嶼存檔</button><button id="import-save" class="challenge-action">匯入島嶼存檔</button><input id="import-file" type="file" accept=".json,application/json" hidden><button id="restart-simulation" class="challenge-action">重新開始模擬</button><button id="restore-terrain" class="challenge-action destructive-action">還原範例地形</button></div>
+    <p class="storage-note">地形與模擬會自動保存在此瀏覽器。匯出可建立 JSON 備份；匯入會取代目前地形、模擬、快照與挑戰進度。重新開始模擬會保留自訂地形；還原範例地形會清除地形筆刷修改。</p>
   </dialog>
   <dialog id="reset-dialog" class="tutorial-dialog" aria-labelledby="reset-title">
     <div class="tutorial-topline"><span class="section-kicker">請確認操作</span><button id="cancel-reset" class="tutorial-skip">取消</button></div>

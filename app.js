@@ -628,6 +628,57 @@
   const storageDialog = $('#storage-dialog');
   const resetDialog = $('#reset-dialog');
   let pendingReset = null;
+  function isRecord(value) {
+    return value !== null && typeof value === 'object' && !Array.isArray(value);
+  }
+  function validTerrainData(value) {
+    if (!isRecord(value) || Object.keys(value).length > 180) return false;
+    return Object.entries(value).every(([cell, type]) => {
+      const match = /^(\d+)-(\d+)$/.exec(cell);
+      return match && Number(match[1]) < 18 && Number(match[2]) < 10 && ['forest', 'grass', 'wetland', 'sand'].includes(type);
+    });
+  }
+  function validSimulationState(state) {
+    if (!isRecord(state) || !Number.isSafeInteger(state.day) || state.day < 1 || state.day > 1000000) return false;
+    if (!['春季', '夏季', '秋季', '冬季'].includes(state.season)) return false;
+    if (!isRecord(state.environment) || !isRecord(state.resources) || !isRecord(state.populations)) return false;
+    const environment = state.environment;
+    if (!Number.isFinite(environment.temperature) || environment.temperature < -20 || environment.temperature > 60) return false;
+    for (const key of ['rainfall', 'humidity', 'water']) {
+      if (!Number.isFinite(environment[key]) || environment[key] < 0 || environment[key] > 100) return false;
+    }
+    for (const profile of EcosystemSimulation.species) {
+      const values = profile.kind === 'producer' ? state.resources : state.populations;
+      const amount = values[profile.id];
+      if (!Number.isFinite(amount) || amount < 0 || amount > (profile.kind === 'producer' ? 100 : 10000) || (profile.kind !== 'producer' && !Number.isSafeInteger(amount))) return false;
+    }
+    for (const key of ['nectar', 'water']) {
+      if (!Number.isFinite(state.resources[key]) || state.resources[key] < 0 || state.resources[key] > 100) return false;
+    }
+    if (!isRecord(state.distribution)) return false;
+    for (const profile of EcosystemSimulation.species.filter((entry) => entry.kind === 'consumer')) {
+      const shares = state.distribution[profile.id];
+      if (!isRecord(shares) || !Object.values(shares).every((value) => Number.isFinite(value) && value >= 0 && value <= 100)) return false;
+      const total = Object.values(shares).reduce((sum, value) => sum + value, 0);
+      if (Math.abs(total - 100) > 1) return false;
+    }
+    if (!Array.isArray(state.events) || state.events.length > 20 || !state.events.every((event) => isRecord(event) && typeof event.title === 'string' && typeof event.detail === 'string' && typeof event.icon === 'string' && Number.isSafeInteger(event.day))) return false;
+    if (!Array.isArray(state.series) || state.series.length < 1 || state.series.length > 30) return false;
+    const seriesFields = ['day', 'richness', 'stability', 'population', 'predators', 'vegetation'];
+    return state.series.every((point) => isRecord(point) && Number.isSafeInteger(point.day) && point.day > 0 && seriesFields.slice(1).every((field) => Number.isFinite(point[field]) && point[field] >= 0));
+  }
+  function validateSaveFile(data) {
+    if (!isRecord(data) || data.format !== 'archipelago-observatory-save' || data.formatVersion !== 1) return '不支援這個存檔格式或版本。';
+    if (!validTerrainData(data.terrain)) return '地形資料不完整或包含無效格子。';
+    const sim = data.simulation;
+    if (!isRecord(sim) || !validSimulationState(sim.state)) return '模擬狀態不完整或數值超出範圍。';
+    const validStateList = (states) => Array.isArray(states) && states.length <= 30 && states.every(validSimulationState);
+    if (!validStateList(sim.history || []) || !validStateList(sim.redoHistory || [])) return '模擬回退紀錄格式有誤。';
+    if (!Array.isArray(sim.snapshots || []) || sim.snapshots.length > 10 || !(sim.snapshots || []).every((snapshot) =>
+      isRecord(snapshot) && typeof snapshot.id === 'string' && Number.isSafeInteger(snapshot.day) && snapshot.day === snapshot.state?.day && validSimulationState(snapshot.state) && validTerrainData(snapshot.terrain) && Number.isFinite(Date.parse(snapshot.createdAt)))) return '快照資料格式有誤。';
+    if (data.challengeStartDay !== null && (!Number.isSafeInteger(data.challengeStartDay) || data.challengeStartDay < 1 || data.challengeStartDay > 1000000)) return '挑戰進度格式有誤。';
+    return '';
+  }
   function renderStorageSummary() {
     $('#storage-summary').textContent = `模擬進度：第 ${simulationState.day} 天；自訂地形：${Object.keys(terrain).length} 格。資料會自動保存在目前瀏覽器的本機儲存空間。`;
   }
@@ -648,6 +699,97 @@
     const simulationSaved = saveSimulation();
     renderStorageSummary();
     toast(terrainSaved && simulationSaved ? '已保存目前的地形與模擬進度。' : '部分資料未能保存，請檢查瀏覽器儲存空間。');
+  });
+  $('#export-save').addEventListener('click', () => {
+    const exportData = {
+      format: 'archipelago-observatory-save',
+      formatVersion: 1,
+      exportedAt: new Date().toISOString(),
+      terrain: JSON.parse(JSON.stringify(terrain)),
+      simulation: {
+        state: JSON.parse(JSON.stringify(simulationState)),
+        history: JSON.parse(JSON.stringify(simulationHistory.slice(-30))),
+        redoHistory: JSON.parse(JSON.stringify(simulationRedoHistory.slice(-30))),
+        snapshots: JSON.parse(JSON.stringify(simulationSnapshots.slice(0, 10)))
+      },
+      challengeStartDay
+    };
+    const file = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(file);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `archipelago-save-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast('已匯出島嶼 JSON 存檔。');
+  });
+  const importFile = $('#import-file');
+  $('#import-save').addEventListener('click', () => importFile.click());
+  importFile.addEventListener('change', async () => {
+    const file = importFile.files?.[0];
+    importFile.value = '';
+    if (!file) return;
+    if (file.size > 8 * 1024 * 1024) return toast('存檔超過 8 MB，無法匯入。');
+    let imported;
+    try { imported = JSON.parse(await file.text()); }
+    catch { return toast('無法讀取 JSON 存檔，請檢查檔案內容。'); }
+    const validationMessage = validateSaveFile(imported);
+    if (validationMessage) return toast(validationMessage);
+    if (!window.confirm('匯入會取代目前瀏覽器的地形、模擬、快照與挑戰進度。建議先匯出備份。要繼續嗎？')) return;
+
+    const importedTerrain = Object.fromEntries(Object.entries(imported.terrain));
+    const importedState = EcosystemSimulation.syncHabitat(imported.simulation.state, importedTerrain);
+    const importedSnapshots = (imported.simulation.snapshots || []).map((snapshot) => ({
+      ...snapshot,
+      state: EcosystemSimulation.syncHabitat(snapshot.state, snapshot.terrain)
+    }));
+    const importedRecord = {
+      state: importedState,
+      history: (imported.simulation.history || []).slice(-30),
+      redoHistory: (imported.simulation.redoHistory || []).slice(-30),
+      snapshots: importedSnapshots.slice(0, 10)
+    };
+    const previousValues = {};
+    try {
+      previousValues.terrain = localStorage.getItem(storageKey);
+      previousValues.simulation = localStorage.getItem(simulationStorageKey);
+      previousValues.challenge = localStorage.getItem(challengeStorageKey);
+    } catch {
+      return toast('無法存取瀏覽器本機儲存空間，未匯入存檔。');
+    }
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(importedTerrain));
+      localStorage.setItem(simulationStorageKey, JSON.stringify(importedRecord));
+      if (imported.challengeStartDay === null) localStorage.removeItem(challengeStorageKey);
+      else localStorage.setItem(challengeStorageKey, String(imported.challengeStartDay));
+    } catch {
+      try {
+        for (const [key, value] of [[storageKey, previousValues.terrain], [simulationStorageKey, previousValues.simulation], [challengeStorageKey, previousValues.challenge]]) {
+          if (value === null || value === undefined) localStorage.removeItem(key);
+          else localStorage.setItem(key, value);
+        }
+      } catch { /* best-effort rollback when browser storage is unavailable */ }
+      return toast('匯入未完成，原本存檔未能安全替換。');
+    }
+
+    pause();
+    terrain = importedTerrain;
+    simulationState = importedState;
+    simulationHistory = importedRecord.history;
+    simulationRedoHistory = importedRecord.redoHistory;
+    simulationSnapshots = importedSnapshots;
+    challengeStartDay = imported.challengeStartDay;
+    undoStack = [];
+    redoStack = [];
+    selectedCell = null;
+    $('#selected-cell').setAttribute('visibility', 'hidden');
+    renderTerrain();
+    updateHistoryButtons();
+    storageDialog.close();
+    renderDay();
+    toast('島嶼存檔已匯入。');
   });
   $('#restart-simulation').addEventListener('click', () => requestReset('simulation'));
   $('#restore-terrain').addEventListener('click', () => requestReset('terrain'));
