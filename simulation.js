@@ -160,6 +160,7 @@
       habitats: habitatFromTerrain(terrainEdits),
       distribution: Object.fromEntries(species.filter((entry) => entry.kind === 'consumer').map((entry) => [entry.id, distributePopulation(entry.preferredHabitats, habitatFromTerrain(terrainEdits))])),
       terrainEdits,
+      lastFireDay: null,
       events: initialEvents(day, resources, populations),
       series: [{ day, richness: 8, stability: 84, population: Object.values(populations).reduce((sum, value) => sum + value, 0), predators: populations['island-lizard'], vegetation: 62 }]
     };
@@ -217,6 +218,14 @@
       populations[entry.id] = Math.max(0, count + change);
     }
 
+    const fireCooldownElapsed = previous.lastFireDay === null || previous.lastFireDay === undefined ||
+      (Number.isSafeInteger(previous.lastFireDay) && day - previous.lastFireDay >= 60);
+    const wildfire = resources.water <= 50 && temperature >= 26.5 && resources['island-grass'] >= 35 && fireCooldownElapsed;
+    if (wildfire) {
+      resources['island-grass'] = Math.max(0, resources['island-grass'] - 18);
+      resources.nectar = Math.max(0, resources.nectar - 12);
+    }
+
     const migration = migrateDistribution(previous, habitats);
     const next = {
       day,
@@ -238,6 +247,7 @@
       habitats,
       distribution: migration.distribution,
       terrainEdits,
+      lastFireDay: wildfire ? day : (previous.lastFireDay ?? null),
       events: [...previous.events],
       series: [...previous.series]
     };
@@ -246,6 +256,7 @@
     if (migration.migrationActivity >= 24) events.push({ icon: '🧭', title: '物種分布隨棲地調整', detail: '部分族群逐步移向較合適的棲地', day });
     if (previous.resources.water > 50 && next.resources.water <= 50) events.push({ icon: '🏜️', title: '淡水進入乾旱警戒', detail: `存量低於 50%，植被生長會受限。本日補注 ${next.environment.waterCycle.infiltration}，逕流 ${next.environment.waterCycle.runoff}，蒸散 ${next.environment.waterCycle.evaporation}；可增加濕地或森林以保水。`, day });
     if (previous.resources.water < 60 && next.resources.water >= 60) events.push({ icon: '💧', title: '淡水存量恢復', detail: '島嶼水量回到較穩定範圍，注意後續降雨與蒸散變化。', day });
+    if (wildfire) events.push({ icon: '🔥', title: '乾旱熱浪引發林地火災', detail: '低水量與高溫讓林地燃燒，草叢覆蓋與花蜜資源減少；接下來需留意動物食物是否充足。', day });
     if (previous.resources['island-grass'] > 25 && next.resources['island-grass'] <= 25) events.push({ icon: '⚠', title: '草原食物資源偏低', detail: '草食與雜食物種的食物供應減少', day });
     if (previous.resources['coastal-seagrass'] > 25 && next.resources['coastal-seagrass'] <= 25) events.push({ icon: '⚠', title: '海岸食物資源偏低', detail: '海草下降，海岸草食者面臨壓力', day });
     if (rainfall >= 82) events.push({ icon: '☂', title: '午後降雨滋養島嶼', detail: `降雨 ${rainfall}%，淡水量回升`, day });

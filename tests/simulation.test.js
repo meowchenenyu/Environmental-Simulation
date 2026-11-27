@@ -55,14 +55,39 @@ test('low-retention terrain triggers a drought warning over multiple seasons', (
   let state = simulation.createInitialState();
   const dryTerrain = Object.fromEntries(Array.from({ length: 180 }, (_, index) => [`${index % 18}-${Math.floor(index / 18)}`, 'sand']));
   let droughtDay = null;
+  let wildfireDay = null;
   for (let day = 0; day < 480; day += 1) {
     state = simulation.stepSimulation(state, dryTerrain);
-    if (state.events.some((event) => event.title === '淡水進入乾旱警戒')) {
-      droughtDay = state.day;
-      break;
-    }
+    if (!droughtDay && state.events.some((event) => event.title === '淡水進入乾旱警戒' && event.day === state.day)) droughtDay = state.day;
+    if (!wildfireDay && state.events.some((event) => event.title === '乾旱熱浪引發林地火災' && event.day === state.day)) wildfireDay = state.day;
   }
   assert.ok(droughtDay, 'dry terrain should cross the warning threshold within four simulated years');
+  assert.ok(wildfireDay, 'dry terrain should trigger a hot-season wildfire within four simulated years');
+});
+
+test('dry hot conditions trigger a wildfire that consumes vegetation', () => {
+  const state = simulation.createInitialState();
+  state.day = 52;
+  state.resources.water = 30;
+  state.resources['island-grass'] = 70;
+  state.resources.nectar = 60;
+  const next = simulation.stepSimulation(state, {});
+  assert.ok(next.events.some((event) => event.title === '乾旱熱浪引發林地火災'));
+  assert.ok(next.resources['island-grass'] <= 53);
+  assert.ok(next.resources.nectar <= 48);
+  assert.equal(next.lastFireDay, next.day);
+});
+
+test('wildfire cooldown prevents repeated burns within 60 days', () => {
+  let state = simulation.createInitialState();
+  state.day = 60;
+  state.resources.water = 30;
+  let fires = 0;
+  for (let step = 0; step < 60; step += 1) {
+    state = simulation.stepSimulation({ ...state, resources: { ...state.resources, water: 30 } }, {});
+    fires += state.events.filter((event) => event.title === '乾旱熱浪引發林地火災' && event.day === state.day).length;
+  }
+  assert.ok(fires <= 1);
 });
 
 test('default island water does not become stuck at a storage limit across four years', () => {

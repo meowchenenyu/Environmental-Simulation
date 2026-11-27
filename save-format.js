@@ -56,6 +56,7 @@
       if (!Number.isFinite(state.resources[key]) || state.resources[key] < 0 || state.resources[key] > 100) return false;
     }
     if (!isRecord(state.distribution)) return false;
+    if (state.lastFireDay !== undefined && state.lastFireDay !== null && (!Number.isSafeInteger(state.lastFireDay) || state.lastFireDay < 1 || state.lastFireDay > state.day)) return false;
     for (const profile of simulation.species.filter((entry) => entry.kind === 'consumer')) {
       const shares = state.distribution[profile.id];
       if (!isRecord(shares) || !Object.values(shares).every((value) => Number.isFinite(value) && value >= 0 && value <= 100)) return false;
