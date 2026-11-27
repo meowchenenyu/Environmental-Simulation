@@ -6,8 +6,9 @@ create table public.islands (
   owner_id uuid not null references auth.users (id) on delete cascade,
   name text not null check (char_length(btrim(name)) between 1 and 80),
   description text not null default '' check (char_length(description) <= 2000),
+  cover_icon text not null default '🌴' check (char_length(cover_icon) <= 16),
   visibility text not null default 'private' check (visibility in ('private', 'public')),
-  save_format_version smallint not null default 1 check (save_format_version > 0),
+  save_format_version smallint not null default 2 check (save_format_version > 0),
   save_data jsonb not null check (jsonb_typeof(save_data) = 'object'),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()

@@ -8,6 +8,18 @@
   const EcosystemSimulation = window.EcosystemSimulation;
   const simulationStorageKey = 'archipelago-observatory:tidal-between:simulation:v1';
   const challengeStorageKey = 'archipelago-observatory:tidal-between:challenge:v1';
+  const islandMetadataStorageKey = 'archipelago-observatory:tidal-between:island:v1';
+  const defaultIslandMetadata = { name: '潮汐之間', description: '一座被暖流環抱的島，今天會有什麼新發現？', cover: '🌴' };
+  const islandCovers = ['🌴', '🌿', '🌊', '🏝️', '🌳'];
+  let islandMetadata = { ...defaultIslandMetadata };
+  try {
+    const savedMetadata = JSON.parse(localStorage.getItem(islandMetadataStorageKey) || 'null');
+    if (savedMetadata && typeof savedMetadata === 'object' && !Array.isArray(savedMetadata)) {
+      if (typeof savedMetadata.name === 'string' && savedMetadata.name.trim()) islandMetadata.name = savedMetadata.name.slice(0, 80);
+      if (typeof savedMetadata.description === 'string') islandMetadata.description = savedMetadata.description.slice(0, 500);
+      if (islandCovers.includes(savedMetadata.cover)) islandMetadata.cover = savedMetadata.cover;
+    }
+  } catch { /* 島嶼介紹使用範例預設值 */ }
   let challengeStartDay = null;
   try {
     const savedChallengeDay = Number(localStorage.getItem(challengeStorageKey));
@@ -668,7 +680,8 @@
     return state.series.every((point) => isRecord(point) && Number.isSafeInteger(point.day) && point.day > 0 && seriesFields.slice(1).every((field) => Number.isFinite(point[field]) && point[field] >= 0));
   }
   function validateSaveFile(data) {
-    if (!isRecord(data) || data.format !== 'archipelago-observatory-save' || data.formatVersion !== 1) return '不支援這個存檔格式或版本。';
+    if (!isRecord(data) || data.format !== 'archipelago-observatory-save' || ![1, 2].includes(data.formatVersion)) return '不支援這個存檔格式或版本。';
+    if (data.formatVersion === 2 && (!isRecord(data.metadata) || typeof data.metadata.name !== 'string' || !data.metadata.name.trim() || data.metadata.name.length > 80 || typeof data.metadata.description !== 'string' || data.metadata.description.length > 500 || !islandCovers.includes(data.metadata.cover))) return '島嶼名稱、介紹或封面資料有誤。';
     if (!validTerrainData(data.terrain)) return '地形資料不完整或包含無效格子。';
     const sim = data.simulation;
     if (!isRecord(sim) || !validSimulationState(sim.state)) return '模擬狀態不完整或數值超出範圍。';
@@ -679,8 +692,26 @@
     if (data.challengeStartDay !== null && (!Number.isSafeInteger(data.challengeStartDay) || data.challengeStartDay < 1 || data.challengeStartDay > 1000000)) return '挑戰進度格式有誤。';
     return '';
   }
+  function renderIslandMetadata() {
+    $('#island-heading').textContent = islandMetadata.name;
+    $('#breadcrumb-island-name').textContent = islandMetadata.name;
+    $('#sidebar-island-name').textContent = islandMetadata.name;
+    $('#island-description').textContent = islandMetadata.description || '這座島嶼正在等待新的觀察。';
+    $('#island-cover').textContent = islandMetadata.cover;
+    document.title = `${islandMetadata.name} — 群島觀察誌`;
+  }
+  function saveIslandMetadata(nextMetadata) {
+    try {
+      localStorage.setItem(islandMetadataStorageKey, JSON.stringify(nextMetadata));
+      islandMetadata = nextMetadata;
+      renderIslandMetadata();
+      return true;
+    } catch {
+      return false;
+    }
+  }
   function renderStorageSummary() {
-    $('#storage-summary').textContent = `模擬進度：第 ${simulationState.day} 天；自訂地形：${Object.keys(terrain).length} 格。資料會自動保存在目前瀏覽器的本機儲存空間。`;
+    $('#storage-summary').textContent = `島嶼：${islandMetadata.name}；模擬進度：第 ${simulationState.day} 天；自訂地形：${Object.keys(terrain).length} 格。資料會自動保存在目前瀏覽器的本機儲存空間。`;
   }
   function requestReset(kind) {
     pendingReset = kind;
@@ -695,16 +726,38 @@
   });
   $('#close-storage').addEventListener('click', () => storageDialog.close());
   $('#save-now').addEventListener('click', () => {
+    const metadataSaved = saveIslandMetadata(islandMetadata);
     const terrainSaved = saveTerrain();
     const simulationSaved = saveSimulation();
     renderStorageSummary();
-    toast(terrainSaved && simulationSaved ? '已保存目前的地形與模擬進度。' : '部分資料未能保存，請檢查瀏覽器儲存空間。');
+    toast(metadataSaved && terrainSaved && simulationSaved ? '已保存島嶼資料與模擬進度。' : '部分資料未能保存，請檢查瀏覽器儲存空間。');
+  });
+  $('#edit-island-profile').addEventListener('click', () => {
+    $('#island-name-input').value = islandMetadata.name;
+    $('#island-description-input').value = islandMetadata.description;
+    $('#island-cover-input').value = islandMetadata.cover;
+    $('#island-profile-dialog').showModal();
+  });
+  $('#close-island-profile').addEventListener('click', () => $('#island-profile-dialog').close());
+  $('#save-island-profile').addEventListener('click', () => {
+    const name = $('#island-name-input').value.trim();
+    if (!name) return toast('請輸入島嶼名稱。');
+    const nextMetadata = {
+      name: name.slice(0, 80),
+      description: $('#island-description-input').value.trim().slice(0, 500),
+      cover: islandCovers.includes($('#island-cover-input').value) ? $('#island-cover-input').value : defaultIslandMetadata.cover
+    };
+    if (!saveIslandMetadata(nextMetadata)) return toast('島嶼資料未能保存，請檢查瀏覽器儲存空間。');
+    renderStorageSummary();
+    $('#island-profile-dialog').close();
+    toast('島嶼名稱、介紹與封面已保存。');
   });
   $('#export-save').addEventListener('click', () => {
     const exportData = {
       format: 'archipelago-observatory-save',
-      formatVersion: 1,
+      formatVersion: 2,
       exportedAt: new Date().toISOString(),
+      metadata: JSON.parse(JSON.stringify(islandMetadata)),
       terrain: JSON.parse(JSON.stringify(terrain)),
       simulation: {
         state: JSON.parse(JSON.stringify(simulationState)),
@@ -737,7 +790,7 @@
     catch { return toast('無法讀取 JSON 存檔，請檢查檔案內容。'); }
     const validationMessage = validateSaveFile(imported);
     if (validationMessage) return toast(validationMessage);
-    if (!window.confirm('匯入會取代目前瀏覽器的地形、模擬、快照與挑戰進度。建議先匯出備份。要繼續嗎？')) return;
+    if (!window.confirm('匯入會取代目前瀏覽器的地形、模擬、快照、挑戰進度與島嶼名稱介紹。建議先匯出備份。要繼續嗎？')) return;
 
     const importedTerrain = Object.fromEntries(Object.entries(imported.terrain));
     const importedState = EcosystemSimulation.syncHabitat(imported.simulation.state, importedTerrain);
@@ -756,17 +809,20 @@
       previousValues.terrain = localStorage.getItem(storageKey);
       previousValues.simulation = localStorage.getItem(simulationStorageKey);
       previousValues.challenge = localStorage.getItem(challengeStorageKey);
+      previousValues.metadata = localStorage.getItem(islandMetadataStorageKey);
     } catch {
       return toast('無法存取瀏覽器本機儲存空間，未匯入存檔。');
     }
     try {
       localStorage.setItem(storageKey, JSON.stringify(importedTerrain));
       localStorage.setItem(simulationStorageKey, JSON.stringify(importedRecord));
+      const importedMetadata = imported.formatVersion === 2 ? imported.metadata : { ...defaultIslandMetadata };
+      localStorage.setItem(islandMetadataStorageKey, JSON.stringify(importedMetadata));
       if (imported.challengeStartDay === null) localStorage.removeItem(challengeStorageKey);
       else localStorage.setItem(challengeStorageKey, String(imported.challengeStartDay));
     } catch {
       try {
-        for (const [key, value] of [[storageKey, previousValues.terrain], [simulationStorageKey, previousValues.simulation], [challengeStorageKey, previousValues.challenge]]) {
+        for (const [key, value] of [[storageKey, previousValues.terrain], [simulationStorageKey, previousValues.simulation], [challengeStorageKey, previousValues.challenge], [islandMetadataStorageKey, previousValues.metadata]]) {
           if (value === null || value === undefined) localStorage.removeItem(key);
           else localStorage.setItem(key, value);
         }
@@ -781,11 +837,13 @@
     simulationRedoHistory = importedRecord.redoHistory;
     simulationSnapshots = importedSnapshots;
     challengeStartDay = imported.challengeStartDay;
+    islandMetadata = imported.formatVersion === 2 ? imported.metadata : { ...defaultIslandMetadata };
     undoStack = [];
     redoStack = [];
     selectedCell = null;
     $('#selected-cell').setAttribute('visibility', 'hidden');
     renderTerrain();
+    renderIslandMetadata();
     updateHistoryButtons();
     storageDialog.close();
     renderDay();
@@ -836,5 +894,6 @@
     if (localStorage.getItem(tutorialStorageKey) !== 'completed') openTutorial();
   } catch { openTutorial(); }
 
+  renderIslandMetadata();
   renderDay();
 })();

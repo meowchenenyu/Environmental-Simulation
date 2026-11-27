@@ -238,5 +238,28 @@
 
 ### 已知限制與驗證紀錄
 
-- migration 尚未套用；此工作環境沒有 `supabase` CLI 或 `psql`。必須在測試專案驗證 SQL、權限和 RLS 後，才可接前端。服務選擇與安全條件記在 `knowledge/decision.md`。
+- migration 尚未套用；全域沒有 `supabase` CLI 或 `psql`，透過 npm registry 執行 `npx --yes supabase --version` 可取得 3.4.0。Docker Desktop Engine 回報 internal server error，手動啟動已安裝的 Windows 服務也遭系統拒絕。必須在可用測試專案或本機資料庫驗證 SQL、權限和 RLS 後，才可接前端。CLI 暫存目錄已加入 `.gitignore`。
 - 已新增 pgTAP 結構檢查草稿 `supabase/tests/database/islands_rls.test.sql`，涵蓋 RLS 開啟、owner policy、anon 權限與 authenticated grant；CLI 不在此環境，因此測試未執行，且仍需補上兩個登入身分的端對端隔離檢查。
+
+## 2026-11-27：加入本機島嶼名稱、介紹與封面資料
+
+### 情境與結果
+
+在等待雲端登入和 RLS 設定時，先完成不依賴帳號的島嶼資料編輯。玩家可修改名稱、介紹及封面圖示，這些資料獨立保存在版本化 localStorage key，並納入匯出 v2。匯入器仍接受 v1，會把舊檔案轉成範例島預設資料。公開分享／隱私切換尚未提供，避免讓只在本機的設定看起來已具有雲端可見性效果。
+
+### 實作經驗
+
+- **把島嶼中繼資料與模擬時間線分開**：名稱、介紹、封面不會因回退模擬或載入時間點快照改變；日後雲端表格可直接映射這些欄位。
+- **備份格式升版時保留舊版匯入**：v2 加入 `metadata`，但仍接受 v1；v1 轉入時使用明確的預設 metadata，減少使用者更新後無法讀取舊備份的風險。
+- **不要提供沒有實際權限效果的公開切換**：未接 RLS／公開檢視政策前，介面只說明資料是本機保存，隱私控制留待雲端授權完成。
+
+### 未來可套用範圍
+
+- 從單一文件型狀態逐步演進為含名稱、描述、封面等 metadata 的雲端物件。
+- 有多版本 JSON 匯入器的個人應用，以明確預設值遷移舊版格式。
+- 可能延伸公開分享的本機原型；未接權限後端前不要宣稱公開／私人開關真的能控制存取。
+
+### 已知限制與驗證紀錄
+
+- 目前只編輯一座本機島嶼，沒有島嶼清單、隱私切換或公開分享。Supabase migration 草稿已加入封面欄位並將存檔版本預設為 v2，但仍未執行。
+- `node --check app.js`、`node --check simulation.js` 和 `git diff --check` 通過；本機瀏覽器 URL 與 Docker Engine 限制使 UI 和 RLS 測試尚未執行。

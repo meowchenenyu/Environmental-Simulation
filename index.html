@@ -20,14 +20,14 @@
         <a class="nav-item" href="#species"><span>♧</span> 物種圖鑑</a>
         <a class="nav-item" href="#insights"><span>⌁</span> 觀察紀錄</a>
       </nav>
-      <div class="sidebar-card"><div class="mini-island">🌴</div><strong>潮汐之間</strong><span id="sidebar-day">熱帶島嶼・第 24 天</span><div class="side-progress"><i id="side-progress"></i></div><small>生態穩定度 <b id="side-stability">85%</b></small></div>
+      <div class="sidebar-card"><div id="island-cover" class="mini-island">🌴</div><strong id="sidebar-island-name">潮汐之間</strong><span id="sidebar-day">熱帶島嶼・第 24 天</span><div class="side-progress"><i id="side-progress"></i></div><small>生態穩定度 <b id="side-stability">85%</b></small></div>
       <div class="sidebar-bottom"><span class="status-dot"></span> 模擬已自動保存</div>
     </aside>
 
     <main id="top" class="main-content">
-      <header class="topbar"><div class="breadcrumbs">我的島嶼 <span>/</span> <strong>潮汐之間</strong></div><div class="top-actions"><button id="open-storage" class="text-button storage-link">存檔</button><button id="open-challenge" class="text-button challenge-link">🌱 初階挑戰</button><button id="open-tutorial" class="text-button tutorial-link">操作教學</button><button class="icon-button" aria-label="通知">♧<i></i></button><div class="avatar" aria-label="使用者">林</div></div></header>
+      <header class="topbar"><div class="breadcrumbs">我的島嶼 <span>/</span> <strong id="breadcrumb-island-name">潮汐之間</strong></div><div class="top-actions"><button id="open-storage" class="text-button storage-link">存檔</button><button id="open-challenge" class="text-button challenge-link">🌱 初階挑戰</button><button id="open-tutorial" class="text-button tutorial-link">操作教學</button><button class="icon-button" aria-label="通知">♧<i></i></button><div class="avatar" aria-label="使用者">林</div></div></header>
 
-      <section class="welcome-row"><div><div class="eyebrow"><span class="live-dot"></span> 生態系正在呼吸</div><h1>潮汐之間<span class="title-spark">✳</span></h1><p class="subhead">一座被暖流環抱的島，今天會有什麼新發現？</p></div><button id="edit-island" class="quiet-button" aria-pressed="false">✎ <span>編輯島嶼</span></button></section>
+      <section class="welcome-row"><div><div class="eyebrow"><span class="live-dot"></span> 生態系正在呼吸</div><h1><span id="island-heading">潮汐之間</span><span class="title-spark">✳</span></h1><p id="island-description" class="subhead">一座被暖流環抱的島，今天會有什麼新發現？</p></div><button id="edit-island" class="quiet-button" aria-pressed="false">✎ <span>編輯島嶼</span></button></section>
 
       <section id="challenge-panel" class="challenge-panel" hidden aria-live="polite"><div class="challenge-icon">🌱</div><div class="challenge-copy"><span id="challenge-status" class="section-kicker">自由探索・可選任務</span><strong>一週生態觀察</strong><p id="challenge-description">從現在起推進 7 天，在最後一天讓至少 6 種物種仍有族群。自由探索隨時可繼續。</p><div class="challenge-progress"><i id="challenge-progress-fill"></i></div></div><button id="challenge-action" class="challenge-action">接受挑戰</button></section>
 
@@ -87,8 +87,17 @@
     <div class="tutorial-topline"><span class="section-kicker">本機資料</span><button id="close-storage" class="tutorial-skip">關閉</button></div>
     <h2 id="storage-title">存檔管理</h2>
     <p id="storage-summary" class="tutorial-copy"></p>
-    <div class="storage-actions"><button id="save-now" class="challenge-action">立即保存</button><button id="export-save" class="challenge-action">匯出島嶼存檔</button><button id="import-save" class="challenge-action">匯入島嶼存檔</button><input id="import-file" type="file" accept=".json,application/json" hidden><button id="restart-simulation" class="challenge-action">重新開始模擬</button><button id="restore-terrain" class="challenge-action destructive-action">還原範例地形</button></div>
-    <p class="storage-note">地形與模擬會自動保存在此瀏覽器。匯出可建立 JSON 備份；匯入會取代目前地形、模擬、快照與挑戰進度。重新開始模擬會保留自訂地形；還原範例地形會清除地形筆刷修改。</p>
+    <div class="storage-actions"><button id="save-now" class="challenge-action">立即保存</button><button id="edit-island-profile" class="challenge-action">編輯島嶼名稱與封面</button><button id="export-save" class="challenge-action">匯出島嶼存檔</button><button id="import-save" class="challenge-action">匯入島嶼存檔</button><input id="import-file" type="file" accept=".json,application/json" hidden><button id="restart-simulation" class="challenge-action">重新開始模擬</button><button id="restore-terrain" class="challenge-action destructive-action">還原範例地形</button></div>
+    <p class="storage-note">地形、模擬與島嶼資料會自動保存在此瀏覽器。匯出可建立 JSON 備份；匯入會取代目前地形、模擬、快照、挑戰與島嶼資料。重新開始模擬會保留自訂地形；還原範例地形會清除地形筆刷修改。</p>
+  </dialog>
+  <dialog id="island-profile-dialog" class="tutorial-dialog storage-dialog" aria-labelledby="island-profile-title">
+    <div class="tutorial-topline"><span class="section-kicker">島嶼資料・此裝置</span><button id="close-island-profile" class="tutorial-skip">取消</button></div>
+    <h2 id="island-profile-title">編輯島嶼資料</h2>
+    <label class="profile-field">島嶼名稱<input id="island-name-input" maxlength="80" autocomplete="off"></label>
+    <label class="profile-field">島嶼介紹<textarea id="island-description-input" maxlength="500" rows="3"></textarea></label>
+    <label class="profile-field">封面圖示<select id="island-cover-input"><option value="🌴">🌴 棕櫚島</option><option value="🌿">🌿 綠意島</option><option value="🌊">🌊 海灣島</option><option value="🏝️">🏝️ 沙洲島</option><option value="🌳">🌳 森林島</option></select></label>
+    <p class="storage-note">資料只保存在目前瀏覽器。公開分享設定會等雲端帳號和隱私規則完成後再提供。</p>
+    <div class="tutorial-actions"><button id="save-island-profile" class="play-button">保存資料</button></div>
   </dialog>
   <dialog id="reset-dialog" class="tutorial-dialog" aria-labelledby="reset-title">
     <div class="tutorial-topline"><span class="section-kicker">請確認操作</span><button id="cancel-reset" class="tutorial-skip">取消</button></div>

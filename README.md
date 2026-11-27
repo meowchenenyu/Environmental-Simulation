@@ -20,5 +20,7 @@ GitHub Actions workflow 位於 `.github/workflows/deploy.yml`。推送到 `main`
 - `simulation.js`：物種資料、環境更新、資源供需、族群與簡化棲地遷移規則。
 - `knowledge/plan.md`：產品願景與開發路線圖。
 - `knowledge/experience.md`：開發經驗、限制與未來可套用範圍。
+- `knowledge/decision.md`：待外部服務設定的選擇與建議。
+- `supabase/migrations/`：雲端島嶼資料表與擁有者 RLS 的未套用草稿。
 
-地形筆刷支援森林、草原、濕地與沙灘；地形與模擬狀態保存在目前瀏覽器的 localStorage，不會自動同步至其他裝置。模擬使用簡化的確定性規則，供互動探索，不作為生態科學預測。
+在頁面頂端開啟「存檔」，可編輯島嶼名稱、介紹與封面圖示，匯出 JSON v2 備份或匯入 v1／v2 存檔。地形、島嶼資料與模擬狀態保存在目前瀏覽器的 localStorage，不會自動同步至其他裝置。Supabase migration 目前只是草稿，尚未連接雲端服務。模擬使用簡化的確定性規則，供互動探索，不作為生態科學預測。
