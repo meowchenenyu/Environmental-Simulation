@@ -216,3 +216,27 @@
 
 - 匯入目前只接受本專案 v1 envelope，不支援舊網站或第三方格式；瀏覽器 localStorage 多 key 回滾盡力而為，不能替代資料庫交易或離線備份。
 - `node --check app.js`、`node --check simulation.js` 和 `git diff --check` 通過。瀏覽器預覽仍受本機 `file:` URL 安全政策限制，匯出下載和檔案選取尚未做 UI 操作檢查。
+
+## 2026-11-27：準備以擁有者隔離的 Postgres 雲端存檔 schema
+
+### 情境與結果
+
+在不建立外部帳號或部署服務的前提下，新增 `supabase/migrations/202611270001_create_islands.sql` 草稿：島嶼列以 `owner_id` 關聯 Supabase Auth 使用者，保存名稱、描述、隱私欄位、JSON 存檔版本和時間戳記；RLS 先限制為擁有者才能讀寫。公開讀取政策留待探索與管理規則成形後再加入。
+
+### 實作經驗
+
+- **將擁有者限制放在資料庫而非只靠 UI**：瀏覽器端的「我的島嶼」篩選可被改寫，需由 RLS 的 `auth.uid() = owner_id` 限制每次讀寫，並同時用 grant 控制表權限。
+- **先保持私人預設，再逐步開放分享**：即使 schema 預留 `visibility` 欄位，也先不建立匿名或公開讀取政策；待檢舉、管理與公開頁流程設計完成，再新增政策。
+- **把易變的模擬存檔當版本化 JSON 文件**：名稱和擁有者等常查詢欄位保持關聯式欄位，完整模擬／快照放在 JSONB，與目前版本化匯出格式相容。
+- **草稿不可當作已部署的安全證據**：RLS SQL 尚未連至真實 Supabase 專案執行；只有透過 CLI/資料庫測試確認 anon 無權限、使用者不能跨 owner_id 讀寫後，才能標示雲端存檔完成。
+
+### 未來可套用範圍
+
+- 使用 Supabase Auth 並從瀏覽器直接連接 Postgres 的小型應用，適用於早期私有資料表與使用者資料隔離。
+- 本機已有可搬移 JSON schema，雲端第一版想先原樣保存文件，再逐步正規化常用欄位的專案。
+- 公開分享尚未設計好時，可以預留 metadata 欄位，但只允許擁有者存取並等政策完備再公開。
+
+### 已知限制與驗證紀錄
+
+- migration 尚未套用；此工作環境沒有 `supabase` CLI 或 `psql`。必須在測試專案驗證 SQL、權限和 RLS 後，才可接前端。服務選擇與安全條件記在 `knowledge/decision.md`。
+- 已新增 pgTAP 結構檢查草稿 `supabase/tests/database/islands_rls.test.sql`，涵蓋 RLS 開啟、owner policy、anon 權限與 authenticated grant；CLI 不在此環境，因此測試未執行，且仍需補上兩個登入身分的端對端隔離檢查。
