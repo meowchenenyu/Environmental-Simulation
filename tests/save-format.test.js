@@ -82,3 +82,9 @@ test('rejects impossible negative water-cycle inflows', () => {
   save.simulation.state.environment.waterCycle.infiltration = -1;
   assert.match(saveFormat.validate(save), /模擬狀態/);
 });
+
+test('rejects pollution values outside the environment scale', () => {
+  const save = validSave();
+  save.simulation.state.environment.pollution = 101;
+  assert.match(saveFormat.validate(save), /模擬狀態/);
+});

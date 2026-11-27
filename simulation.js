@@ -153,6 +153,7 @@
         rainfall: season.rainfall,
         humidity: 72,
         water: resources.water,
+        pollution: 0,
         waterCycle: { infiltration: 0, runoff: 0, evaporation: 0, netChange: 0 }
       },
       resources,
@@ -188,6 +189,14 @@
     resources.nectar = clamp(resources.nectar + 0.62 * (resources['island-grass'] / 60) + 0.42 * rainFactor - previousAnimals['moonlight-butterfly'] * 0.025);
     const waterCycle = calculateWaterCycle(rainfall, temperature, previous.resources.water, habitats);
     resources.water = waterCycle.water;
+    const fireCooldownElapsed = previous.lastFireDay === null || previous.lastFireDay === undefined ||
+      (Number.isSafeInteger(previous.lastFireDay) && day - previous.lastFireDay >= 60);
+    const wildfire = resources.water <= 50 && temperature >= 26.5 && resources['island-grass'] >= 35 && fireCooldownElapsed;
+    if (wildfire) {
+      resources['island-grass'] = Math.max(0, resources['island-grass'] - 18);
+      resources.nectar = Math.max(0, resources.nectar - 12);
+    }
+    const pollution = clamp((previous.environment.pollution ?? 0) * 0.82 + (wildfire ? 35 : 0));
 
     const frogLoss = Math.min(populations['tree-frog'], round(populations['island-lizard'] * 0.04));
     populations['tree-frog'] -= frogLoss;
@@ -214,18 +223,12 @@
       const habitatFit = clamp(0.45 + suitableHabitat / 100, 0.3, 1.25);
       const food = clamp(foods[entry.id] * temperatureFit * humidityFit * habitatFit, 0, 1.25);
       const density = clamp(1 - count / entry.capacity, 0, 1);
-      const stress = Math.max(0, 1 - food) * 0.04;
+      const pollutionStress = pollution * 0.0005;
+      const stress = Math.max(0, 1 - food) * 0.04 + pollutionStress;
       const change = round(count * (entry.growth * food * density - entry.mortality - stress));
       populations[entry.id] = Math.max(0, count + change);
     }
 
-    const fireCooldownElapsed = previous.lastFireDay === null || previous.lastFireDay === undefined ||
-      (Number.isSafeInteger(previous.lastFireDay) && day - previous.lastFireDay >= 60);
-    const wildfire = resources.water <= 50 && temperature >= 26.5 && resources['island-grass'] >= 35 && fireCooldownElapsed;
-    if (wildfire) {
-      resources['island-grass'] = Math.max(0, resources['island-grass'] - 18);
-      resources.nectar = Math.max(0, resources.nectar - 12);
-    }
     const diseaseCooldownElapsed = previous.lastDiseaseDay === null || previous.lastDiseaseDay === undefined ||
       (Number.isSafeInteger(previous.lastDiseaseDay) && day - previous.lastDiseaseDay >= 90);
     const diseaseOutbreak = environmentHumidity(rainfall, resources.water) >= 90 && populations['tree-frog'] >= 45 && diseaseCooldownElapsed;
@@ -240,6 +243,7 @@
         rainfall,
         humidity: clamp(round(51 + resources.water * 0.32 + rainfall * 0.12)),
         water: round(resources.water),
+        pollution: round(pollution),
         waterCycle: {
           infiltration: round(waterCycle.infiltration * 10) / 10,
           runoff: round(waterCycle.runoff * 10) / 10,

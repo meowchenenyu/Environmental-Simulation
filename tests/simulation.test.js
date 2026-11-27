@@ -88,6 +88,17 @@ test('dry hot conditions trigger a wildfire that consumes vegetation', () => {
   assert.ok(next.resources['island-grass'] <= 53);
   assert.ok(next.resources.nectar <= 48);
   assert.equal(next.lastFireDay, next.day);
+  assert.ok(next.environment.pollution > 0);
+});
+
+test('wildfire smoke decays and higher pollution increases animal stress', () => {
+  const clean = simulation.createInitialState();
+  const polluted = simulation.createInitialState();
+  polluted.environment.pollution = 80;
+  const cleanNext = simulation.stepSimulation(clean, {});
+  const pollutedNext = simulation.stepSimulation(polluted, {});
+  assert.ok(pollutedNext.environment.pollution < polluted.environment.pollution);
+  assert.ok(pollutedNext.populations['blue-pigeon'] <= cleanNext.populations['blue-pigeon']);
 });
 
 test('wildfire cooldown prevents repeated burns within 60 days', () => {

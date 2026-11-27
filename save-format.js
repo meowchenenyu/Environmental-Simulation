@@ -44,6 +44,7 @@
     for (const key of ['rainfall', 'humidity', 'water']) {
       if (!Number.isFinite(environment[key]) || environment[key] < 0 || environment[key] > 100) return false;
     }
+    if (environment.pollution !== undefined && (!Number.isFinite(environment.pollution) || environment.pollution < 0 || environment.pollution > 100)) return false;
     if (environment.waterCycle !== undefined && (!isRecord(environment.waterCycle) ||
       !['infiltration', 'runoff', 'evaporation'].every((key) => Number.isFinite(environment.waterCycle[key]) && environment.waterCycle[key] >= 0 && environment.waterCycle[key] <= 100) ||
       !Number.isFinite(environment.waterCycle.netChange) || environment.waterCycle.netChange < -100 || environment.waterCycle.netChange > 100)) return false;

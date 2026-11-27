@@ -140,6 +140,7 @@
     $('#temperature').textContent = `${environment.temperature}°`;
     $('#humidity').textContent = environment.humidity;
     $('#rainfall').textContent = environment.rainfall;
+    $('#pollution').textContent = environment.pollution ?? 0;
     $('#weather-icon').textContent = environment.rainfall >= 82 ? '☂' : '☀';
     $('#weather-summary').textContent = environment.waterCycle?.netChange < -0.2
       ? '蒸散較強・水量下降'
