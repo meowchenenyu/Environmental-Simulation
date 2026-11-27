@@ -66,7 +66,7 @@
           </svg><div class="map-legend"><span><i class="legend-dot forest"></i>熱帶雨林</span><span><i class="legend-dot wetland"></i>淡水濕地</span><span><i class="legend-dot coast"></i>珊瑚海岸</span><span class="legend-creature">🐾 物種分布</span></div><div class="map-zoom"><button aria-label="放大">＋</button><button aria-label="縮小">−</button></div></div>
           <div class="map-footer"><span id="map-hint">📍 點選地圖上的生物，查看棲地觀察</span><button id="observe-map">開始觀察 <span>→</span></button></div>
         </article>
-        <aside class="right-column"><article class="panel sim-panel"><div class="panel-heading compact"><div><div class="section-kicker">時間控制</div><h2>模擬進度</h2></div><span id="season-tag" class="season-tag">☀ 夏季</span></div><div class="day-display"><div><span>島嶼時間</span><strong>第 <b id="day-count">24</b> 天</strong></div><div class="day-moon">◔</div></div><div class="timeline"><span>第 1 天</span><div class="timeline-track"><i id="timeline-progress"></i></div><span id="timeline-day">24</span></div><div class="sim-controls"><button id="step-back" class="control-button" aria-label="倒退一天">↶</button><button id="play-simulation" class="play-button" aria-label="播放模擬">▶</button><button id="step-forward" class="control-button" aria-label="前進一天">↷</button><button id="speed-button" class="speed-button">1× <span>⌄</span></button></div><div id="sim-message" class="sim-note">島上的生命正穩定成長，繼續觀察吧。</div></article>
+        <aside class="right-column"><article class="panel sim-panel"><div class="panel-heading compact"><div><div class="section-kicker">時間控制</div><h2>模擬進度</h2></div><span id="season-tag" class="season-tag">☀ 夏季</span></div><div class="day-display"><div><span>島嶼時間</span><strong>第 <b id="day-count">24</b> 天</strong></div><div class="day-moon">◔</div></div><div class="timeline"><span>第 1 天</span><div class="timeline-track"><i id="timeline-progress"></i></div><span id="timeline-day">24</span></div><div class="sim-controls"><button id="step-back" class="control-button" aria-label="復原一天" title="復原一天">↶</button><button id="play-simulation" class="play-button" aria-label="播放模擬">▶</button><button id="step-forward" class="control-button" aria-label="前進一天">↷</button><button id="redo-day" class="control-button" aria-label="重做一天" title="重做一天" disabled>⟳</button><button id="speed-button" class="speed-button">1× <span>⌄</span></button></div><div class="sim-utilities"><button id="create-snapshot" class="text-button">建立快照</button><button id="manage-snapshots" class="text-button">快照管理 <span id="snapshot-count">0</span></button></div><div id="sim-message" class="sim-note">島上的生命正穩定成長，繼續觀察吧。</div></article>
           <article class="panel event-panel"><div class="panel-heading compact"><div><div class="section-kicker">剛剛發生</div><h2>島嶼日誌</h2></div><button class="text-button" id="all-events">全部紀錄 →</button></div><div class="event-list" id="event-list"></div></article></aside>
       </section>
 
@@ -94,6 +94,12 @@
     <div class="tutorial-topline"><span class="section-kicker">請確認操作</span><button id="cancel-reset" class="tutorial-skip">取消</button></div>
     <h2 id="reset-title">確定要重設嗎？</h2><p id="reset-copy" class="tutorial-copy"></p>
     <div class="tutorial-actions"><button id="confirm-reset" class="challenge-action destructive-action">確認重設</button></div>
+  </dialog>
+  <dialog id="snapshots-dialog" class="tutorial-dialog storage-dialog" aria-labelledby="snapshots-title">
+    <div class="tutorial-topline"><span class="section-kicker">重要模擬時間點</span><button id="close-snapshots" class="tutorial-skip">關閉</button></div>
+    <h2 id="snapshots-title">快照管理</h2>
+    <p class="storage-note">快照會保存當下模擬與地形，最多 10 份。載入快照會替換目前進度。</p>
+    <div id="snapshot-list" class="snapshot-list"></div>
   </dialog>
 </body>
 </html>

@@ -70,4 +70,12 @@
 .destructive-action:hover{background:#faf2ed}
 .storage-note{margin:14px 0 0;color:#9aa39a;font-size:9px;line-height:1.7}
 @media(max-width:540px){.top-actions{gap:5px}.top-actions .icon-button,.top-actions .avatar{display:none}.top-actions .storage-link,.top-actions .challenge-link,.top-actions .tutorial-link{padding:6px;font-size:8px}.breadcrumbs{font-size:9px}}
+.sim-controls .control-button:disabled{opacity:.35;cursor:default}
+.sim-utilities{display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding-top:7px;border-top:1px solid #f0f0e9}
+.sim-utilities .text-button{font-size:8px;padding:3px}
+.sim-utilities span{display:inline-grid;min-width:15px;height:15px;place-items:center;margin-left:3px;border-radius:8px;background:#edf1e8;color:#71846f;font-size:8px}
+.snapshot-list{display:grid;gap:7px;max-height:270px;overflow:auto;margin-top:14px}
+.snapshot-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 10px;background:#f7f8f3;border:1px solid #ecefe7;border-radius:8px}
+.snapshot-row>div:first-child{display:grid;gap:3px}.snapshot-row strong{font-size:10px;font-weight:600}.snapshot-row small{font-size:8px;color:#97a097}
+.snapshot-actions{display:flex;gap:5px}.snapshot-actions .challenge-action{padding:6px 8px;font-size:8px}
 .species-art.grass{background:#eff3df}.species-art.seagrass{background:#e7f2eb}.species-art.crab{background:#f7eee3}.species-art.lizard{background:#e9efe2}

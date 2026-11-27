@@ -15,6 +15,8 @@
   } catch { /* 挑戰狀態僅作為可選的本機進度 */ }
   let simulationState = EcosystemSimulation.createInitialState();
   let simulationHistory = [];
+  let simulationRedoHistory = [];
+  let simulationSnapshots = [];
   const terrainColors = { forest: '#356f50', grass: '#a7bc6a', wetland: '#48a9a5', sand: '#dfc783' };
   const terrainNames = { forest: '森林', grass: '草原', wetland: '濕地', sand: '沙灘', unsuitable: '無適宜棲地' };
   const storageKey = 'archipelago-observatory:tidal-between:terrain:v1';
@@ -38,10 +40,16 @@
     if (savedSimulation?.state?.populations && Array.isArray(savedSimulation.state.events)) {
       simulationState = savedSimulation.state;
       simulationHistory = Array.isArray(savedSimulation.history) ? savedSimulation.history.slice(-30) : [];
+      simulationRedoHistory = Array.isArray(savedSimulation.redoHistory) ? savedSimulation.redoHistory.slice(-30) : [];
+      simulationSnapshots = Array.isArray(savedSimulation.snapshots)
+        ? savedSimulation.snapshots.filter((snapshot) => snapshot?.id && snapshot.state?.populations && snapshot.terrain && typeof snapshot.terrain === 'object').slice(0, 10)
+        : [];
     }
   } catch {
     simulationState = EcosystemSimulation.createInitialState();
     simulationHistory = [];
+    simulationRedoHistory = [];
+    simulationSnapshots = [];
   }
   simulationState = EcosystemSimulation.syncHabitat(simulationState, terrain);
 
@@ -97,6 +105,9 @@
     renderEvents();
     renderTrendChart();
     renderChallenge();
+    $('#step-back').disabled = simulationHistory.length === 0;
+    $('#redo-day').disabled = simulationRedoHistory.length === 0;
+    $('#snapshot-count').textContent = simulationSnapshots.length;
   }
 
   function renderChallenge() {
@@ -132,7 +143,12 @@
 
   function saveSimulation() {
     try {
-      localStorage.setItem(simulationStorageKey, JSON.stringify({ state: simulationState, history: simulationHistory.slice(-30) }));
+      localStorage.setItem(simulationStorageKey, JSON.stringify({
+        state: simulationState,
+        history: simulationHistory.slice(-30),
+        redoHistory: simulationRedoHistory.slice(-30),
+        snapshots: simulationSnapshots.slice(0, 10)
+      }));
       return true;
     } catch {
       toast('瀏覽器儲存空間不足，模擬進度未能保存。');
@@ -226,6 +242,7 @@
   function advanceDay() {
     simulationHistory.push(JSON.parse(JSON.stringify(simulationState)));
     simulationHistory = simulationHistory.slice(-30);
+    simulationRedoHistory = [];
     simulationState = EcosystemSimulation.stepSimulation(simulationState, terrain);
     saveSimulation();
     renderDay();
@@ -279,6 +296,8 @@
 
   function updateTerrainCell(cellId, value) {
     if (terrain[cellId] === value) return false;
+    const hadSimulationRedo = simulationRedoHistory.length > 0;
+    simulationRedoHistory = [];
     if (value) terrain[cellId] = value;
     else delete terrain[cellId];
     const cell = document.querySelector(`#terrain-layer [data-cell="${cellId}"]`);
@@ -287,6 +306,7 @@
       cell.dataset.terrain = value || '';
     }
     renderSelectedCell();
+    if (hadSimulationRedo) saveSimulation();
     return true;
   }
 
@@ -300,6 +320,7 @@
     if (previous === selectedTerrain) return;
     undoStack.push({ cellId, previous, next: selectedTerrain });
     redoStack = [];
+    simulationRedoHistory = [];
     updateTerrainCell(cellId, selectedTerrain);
     chooseCell(cellId);
     saveTerrain();
@@ -406,9 +427,22 @@
   });
   $('#step-forward').addEventListener('click', advanceDay);
   $('#step-back').addEventListener('click', () => {
+    if (playing) pause();
     const previous = simulationHistory.pop();
     if (!previous) return toast('目前已到這次模擬的最早紀錄。');
+    simulationRedoHistory.push(JSON.parse(JSON.stringify(simulationState)));
+    simulationRedoHistory = simulationRedoHistory.slice(-30);
     simulationState = EcosystemSimulation.syncHabitat(previous, terrain);
+    saveSimulation();
+    renderDay();
+  });
+  $('#redo-day').addEventListener('click', () => {
+    if (playing) pause();
+    const next = simulationRedoHistory.pop();
+    if (!next) return toast('目前沒有可重做的模擬日。');
+    simulationHistory.push(JSON.parse(JSON.stringify(simulationState)));
+    simulationHistory = simulationHistory.slice(-30);
+    simulationState = EcosystemSimulation.syncHabitat(next, terrain);
     saveSimulation();
     renderDay();
   });
@@ -496,6 +530,101 @@
     }
     renderChallenge();
   });
+  const snapshotsDialog = $('#snapshots-dialog');
+  const snapshotList = $('#snapshot-list');
+  let snapshotSequence = 0;
+  function renderSnapshots() {
+    snapshotList.replaceChildren();
+    if (!simulationSnapshots.length) {
+      const empty = document.createElement('p');
+      empty.className = 'storage-note';
+      empty.textContent = '還沒有快照。推進到想保留的模擬時間點後，按「建立快照」。';
+      snapshotList.appendChild(empty);
+      return;
+    }
+    simulationSnapshots.forEach((snapshot) => {
+      const row = document.createElement('div');
+      row.className = 'snapshot-row';
+      const info = document.createElement('div');
+      const title = document.createElement('strong');
+      title.textContent = `第 ${snapshot.day} 天`;
+      const created = document.createElement('small');
+      created.textContent = new Date(snapshot.createdAt).toLocaleString('zh-TW', { dateStyle: 'short', timeStyle: 'short' });
+      info.append(title, created);
+      const actions = document.createElement('div');
+      actions.className = 'snapshot-actions';
+      const restore = document.createElement('button');
+      restore.className = 'challenge-action';
+      restore.textContent = '載入';
+      restore.dataset.snapshotAction = 'restore';
+      restore.dataset.snapshotId = snapshot.id;
+      const remove = document.createElement('button');
+      remove.className = 'challenge-action destructive-action';
+      remove.textContent = '刪除';
+      remove.dataset.snapshotAction = 'delete';
+      remove.dataset.snapshotId = snapshot.id;
+      actions.append(restore, remove);
+      row.append(info, actions);
+      snapshotList.appendChild(row);
+    });
+  }
+  function createSnapshot() {
+    if (simulationSnapshots.length >= 10) {
+      toast('快照已達 10 份上限，請先刪除一份再建立。');
+      return;
+    }
+    const snapshot = {
+      id: `${Date.now()}-${snapshotSequence++}`,
+      day: simulationState.day,
+      createdAt: new Date().toISOString(),
+      state: JSON.parse(JSON.stringify(simulationState)),
+      terrain: JSON.parse(JSON.stringify(terrain))
+    };
+    simulationSnapshots.unshift(snapshot);
+    if (!saveSimulation()) {
+      simulationSnapshots.shift();
+      return;
+    }
+    renderDay();
+    renderSnapshots();
+    toast(`已保存第 ${snapshot.day} 天快照。`);
+  }
+  $('#create-snapshot').addEventListener('click', createSnapshot);
+  $('#manage-snapshots').addEventListener('click', () => {
+    renderSnapshots();
+    snapshotsDialog.showModal();
+  });
+  $('#close-snapshots').addEventListener('click', () => snapshotsDialog.close());
+  snapshotList.addEventListener('click', (event) => {
+    const action = event.target.closest('[data-snapshot-action]');
+    if (!action) return;
+    const index = simulationSnapshots.findIndex((snapshot) => snapshot.id === action.dataset.snapshotId);
+    if (index < 0) return;
+    if (action.dataset.snapshotAction === 'delete') {
+      if (!window.confirm(`刪除第 ${simulationSnapshots[index].day} 天的快照？此操作無法復原。`)) return;
+      const [removed] = simulationSnapshots.splice(index, 1);
+      if (!saveSimulation()) simulationSnapshots.splice(index, 0, removed);
+      renderSnapshots();
+      renderDay();
+      return;
+    }
+    const snapshot = simulationSnapshots[index];
+    if (!window.confirm(`載入第 ${snapshot.day} 天的快照？目前的模擬與地形會被替換。`)) return;
+    pause();
+    simulationState = JSON.parse(JSON.stringify(snapshot.state));
+    terrain = JSON.parse(JSON.stringify(snapshot.terrain));
+    simulationHistory = [];
+    simulationRedoHistory = [];
+    undoStack = [];
+    redoStack = [];
+    renderTerrain();
+    const terrainSaved = saveTerrain();
+    const simulationSaved = saveSimulation();
+    updateHistoryButtons();
+    snapshotsDialog.close();
+    renderDay();
+    toast(terrainSaved && simulationSaved ? `已載入第 ${snapshot.day} 天快照。` : '快照已載入目前畫面，但部分資料未能保存。');
+  });
   const storageDialog = $('#storage-dialog');
   const resetDialog = $('#reset-dialog');
   let pendingReset = null;
@@ -528,6 +657,7 @@
       pause();
       simulationState = EcosystemSimulation.syncHabitat(EcosystemSimulation.createInitialState(), terrain);
       simulationHistory = [];
+      simulationRedoHistory = [];
       challengeStartDay = null;
       try { localStorage.removeItem(challengeStorageKey); } catch { /* 模擬仍可重設 */ }
       saveSimulation();
@@ -536,6 +666,7 @@
       terrain = {};
       undoStack = [];
       redoStack = [];
+      simulationRedoHistory = [];
       selectedCell = null;
       $('#selected-cell').setAttribute('visibility', 'hidden');
       renderTerrain();
