@@ -25,9 +25,11 @@
     </aside>
 
     <main id="top" class="main-content">
-      <header class="topbar"><div class="breadcrumbs">我的島嶼 <span>/</span> <strong>潮汐之間</strong></div><div class="top-actions"><button id="open-tutorial" class="text-button tutorial-link">操作教學</button><button class="icon-button" aria-label="通知">♧<i></i></button><div class="avatar" aria-label="使用者">林</div></div></header>
+      <header class="topbar"><div class="breadcrumbs">我的島嶼 <span>/</span> <strong>潮汐之間</strong></div><div class="top-actions"><button id="open-challenge" class="text-button challenge-link">🌱 初階挑戰</button><button id="open-tutorial" class="text-button tutorial-link">操作教學</button><button class="icon-button" aria-label="通知">♧<i></i></button><div class="avatar" aria-label="使用者">林</div></div></header>
 
       <section class="welcome-row"><div><div class="eyebrow"><span class="live-dot"></span> 生態系正在呼吸</div><h1>潮汐之間<span class="title-spark">✳</span></h1><p class="subhead">一座被暖流環抱的島，今天會有什麼新發現？</p></div><button id="edit-island" class="quiet-button" aria-pressed="false">✎ <span>編輯島嶼</span></button></section>
+
+      <section id="challenge-panel" class="challenge-panel" hidden aria-live="polite"><div class="challenge-icon">🌱</div><div class="challenge-copy"><span id="challenge-status" class="section-kicker">自由探索・可選任務</span><strong>一週生態觀察</strong><p id="challenge-description">從現在起推進 7 天，在最後一天讓至少 6 種物種仍有族群。自由探索隨時可繼續。</p><div class="challenge-progress"><i id="challenge-progress-fill"></i></div></div><button id="challenge-action" class="challenge-action">接受挑戰</button></section>
 
       <section class="stat-grid" aria-label="生態指標">
         <article class="stat-card"><div class="stat-top"><span>物種數量</span><span class="stat-icon leaf-icon">♧</span></div><div class="stat-number"><strong id="species-count">8</strong><small>種</small></div><div class="stat-foot"><span id="species-status">含生產者與消費者</span></div></article>

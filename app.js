@@ -7,6 +7,12 @@
   let activeChart = 'richness';
   const EcosystemSimulation = window.EcosystemSimulation;
   const simulationStorageKey = 'archipelago-observatory:tidal-between:simulation:v1';
+  const challengeStorageKey = 'archipelago-observatory:tidal-between:challenge:v1';
+  let challengeStartDay = null;
+  try {
+    const savedChallengeDay = Number(localStorage.getItem(challengeStorageKey));
+    if (Number.isInteger(savedChallengeDay) && savedChallengeDay > 0) challengeStartDay = savedChallengeDay;
+  } catch { /* 挑戰狀態僅作為可選的本機進度 */ }
   let simulationState = EcosystemSimulation.createInitialState();
   let simulationHistory = [];
   const terrainColors = { forest: '#356f50', grass: '#a7bc6a', wetland: '#48a9a5', sand: '#dfc783' };
@@ -90,6 +96,38 @@
     });
     renderEvents();
     renderTrendChart();
+    renderChallenge();
+  }
+
+  function renderChallenge() {
+    const panel = $('#challenge-panel');
+    if (panel.hidden) return;
+    const status = $('#challenge-status');
+    const description = $('#challenge-description');
+    const button = $('#challenge-action');
+    const progress = $('#challenge-progress-fill');
+    if (challengeStartDay === null) {
+      status.textContent = '自由探索・可選任務';
+      description.textContent = '從現在起推進 7 天，在最後一天讓至少 6 種物種仍有族群。自由探索隨時可繼續。';
+      button.textContent = '接受挑戰';
+      progress.style.width = '0%';
+      return;
+    }
+    const elapsed = Math.max(0, simulationState.day - challengeStartDay);
+    const fraction = Math.min(1, elapsed / 7);
+    progress.style.width = `${fraction * 100}%`;
+    if (elapsed < 7) {
+      status.textContent = '初階挑戰・進行中';
+      description.textContent = `已觀察 ${elapsed} / 7 天；目前有 ${EcosystemSimulation.metricsFor(simulationState).richness} 種物種。再推進 ${7 - elapsed} 天，並在終點保有至少 6 種。`;
+      button.textContent = '回到自由探索';
+      return;
+    }
+    const success = EcosystemSimulation.metricsFor(simulationState).richness >= 6;
+    status.textContent = success ? '初階挑戰・完成' : '初階挑戰・再試一次';
+    description.textContent = success
+      ? `觀察滿 7 天，終點仍有 ${EcosystemSimulation.metricsFor(simulationState).richness} 種物種。可以繼續自由探索，或再挑戰一次。`
+      : `觀察滿 7 天，但終點只有 ${EcosystemSimulation.metricsFor(simulationState).richness} 種物種。調整棲地後可以重新挑戰。`;
+    button.textContent = '再玩一次';
   }
 
   function saveSimulation() {
@@ -436,6 +474,24 @@
     if (!tutorialDialog.open) tutorialDialog.showModal();
   }
   $('#open-tutorial').addEventListener('click', openTutorial);
+  $('#open-challenge').addEventListener('click', () => {
+    $('#challenge-panel').hidden = false;
+    renderChallenge();
+    $('#challenge-panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
+  $('#challenge-action').addEventListener('click', () => {
+    const elapsed = challengeStartDay === null ? null : simulationState.day - challengeStartDay;
+    if (elapsed !== null && elapsed < 7) {
+      challengeStartDay = null;
+      try { localStorage.removeItem(challengeStorageKey); } catch { /* 當次可繼續自由探索 */ }
+      toast('已回到自由探索，模擬進度保留。');
+    } else {
+      challengeStartDay = simulationState.day;
+      try { localStorage.setItem(challengeStorageKey, String(challengeStartDay)); } catch { /* 當次挑戰仍可進行 */ }
+      toast('初階挑戰開始：觀察接下來 7 天。');
+    }
+    renderChallenge();
+  });
   $('#skip-tutorial').addEventListener('click', completeTutorial);
   $('#tutorial-next').addEventListener('click', () => {
     if (tutorialStep === tutorialSteps.length - 1) return completeTutorial();
