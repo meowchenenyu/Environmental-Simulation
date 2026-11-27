@@ -243,8 +243,8 @@
 
     const events = [];
     if (migration.migrationActivity >= 24) events.push({ icon: '🧭', title: '物種分布隨棲地調整', detail: '部分族群逐步移向較合適的棲地', day });
-    if (previous.resources.water > 35 && next.resources.water <= 35) events.push({ icon: '🏜️', title: '淡水進入乾旱警戒', detail: `本日補注 ${next.environment.waterCycle.infiltration}，逕流 ${next.environment.waterCycle.runoff}，蒸散 ${next.environment.waterCycle.evaporation}；可增加濕地或森林以保水。`, day });
-    if (previous.resources.water < 45 && next.resources.water >= 45) events.push({ icon: '💧', title: '淡水存量恢復', detail: '島嶼水量回到較穩定範圍，注意後續降雨與蒸散變化。', day });
+    if (previous.resources.water > 50 && next.resources.water <= 50) events.push({ icon: '🏜️', title: '淡水進入乾旱警戒', detail: `存量低於 50%。本日補注 ${next.environment.waterCycle.infiltration}，逕流 ${next.environment.waterCycle.runoff}，蒸散 ${next.environment.waterCycle.evaporation}；可增加濕地或森林以保水。`, day });
+    if (previous.resources.water < 60 && next.resources.water >= 60) events.push({ icon: '💧', title: '淡水存量恢復', detail: '島嶼水量回到較穩定範圍，注意後續降雨與蒸散變化。', day });
     if (previous.resources['island-grass'] > 25 && next.resources['island-grass'] <= 25) events.push({ icon: '⚠', title: '草原食物資源偏低', detail: '草食與雜食物種的食物供應減少', day });
     if (previous.resources['coastal-seagrass'] > 25 && next.resources['coastal-seagrass'] <= 25) events.push({ icon: '⚠', title: '海岸食物資源偏低', detail: '海草下降，海岸草食者面臨壓力', day });
     if (rainfall >= 82) events.push({ icon: '☂', title: '午後降雨滋養島嶼', detail: `降雨 ${rainfall}%，淡水量回升`, day });

@@ -34,10 +34,24 @@ test('water balance clamps storage and reports a reproducible budget', () => {
 test('daily simulation records seasonal water budget and drought warning', () => {
   const state = simulation.createInitialState();
   state.day = 52;
-  state.resources.water = 35.05;
+  state.resources.water = 50.05;
   const next = simulation.stepSimulation(state, {});
   assert.ok(next.environment.waterCycle);
   assert.ok(next.events.some((event) => event.title === '淡水進入乾旱警戒'));
+});
+
+test('low-retention terrain triggers a drought warning over multiple seasons', () => {
+  let state = simulation.createInitialState();
+  const dryTerrain = Object.fromEntries(Array.from({ length: 180 }, (_, index) => [`${index % 18}-${Math.floor(index / 18)}`, 'sand']));
+  let droughtDay = null;
+  for (let day = 0; day < 480; day += 1) {
+    state = simulation.stepSimulation(state, dryTerrain);
+    if (state.events.some((event) => event.title === '淡水進入乾旱警戒')) {
+      droughtDay = state.day;
+      break;
+    }
+  }
+  assert.ok(droughtDay, 'dry terrain should cross the warning threshold within four simulated years');
 });
 
 test('default island water does not become stuck at a storage limit across four years', () => {
