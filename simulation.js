@@ -253,6 +253,12 @@
     };
 
     const events = [];
+    if (previous.season !== season.name) events.push({
+      icon: season.icon,
+      title: `進入${season.name}`,
+      detail: `季節氣候基準：溫度 ${season.temperature}°C、降雨 ${season.rainfall}%；實際天氣仍會逐日變動。`,
+      day
+    });
     if (migration.migrationActivity >= 24) events.push({ icon: '🧭', title: '物種分布隨棲地調整', detail: '部分族群逐步移向較合適的棲地', day });
     if (previous.resources.water > 50 && next.resources.water <= 50) events.push({ icon: '🏜️', title: '淡水進入乾旱警戒', detail: `存量低於 50%，植被生長會受限。本日補注 ${next.environment.waterCycle.infiltration}，逕流 ${next.environment.waterCycle.runoff}，蒸散 ${next.environment.waterCycle.evaporation}；可增加濕地或森林以保水。`, day });
     if (previous.resources.water < 60 && next.resources.water >= 60) events.push({ icon: '💧', title: '淡水存量恢復', detail: '島嶼水量回到較穩定範圍，注意後續降雨與蒸散變化。', day });

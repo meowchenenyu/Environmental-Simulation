@@ -51,6 +51,18 @@ test('daily simulation records seasonal water budget and drought warning', () =>
   assert.ok(next.events.some((event) => event.title === '淡水進入乾旱警戒'));
 });
 
+test('records each seasonal climate transition with baseline guidance', () => {
+  let state = simulation.createInitialState();
+  const transitions = [];
+  for (let day = 0; day < 120; day += 1) {
+    state = simulation.stepSimulation(state, {});
+    const event = state.events.find((entry) => entry.day === state.day && entry.title.startsWith('進入'));
+    if (event) transitions.push(event);
+  }
+  assert.deepEqual(transitions.map((event) => event.title), ['進入秋季', '進入冬季', '進入春季', '進入夏季']);
+  assert.match(transitions[0].detail, /溫度 .*°C、降雨 .*%/);
+});
+
 test('low-retention terrain triggers a drought warning over multiple seasons', () => {
   let state = simulation.createInitialState();
   const dryTerrain = Object.fromEntries(Array.from({ length: 180 }, (_, index) => [`${index % 18}-${Math.floor(index / 18)}`, 'sand']));
