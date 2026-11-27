@@ -122,4 +122,4 @@ MVP 優先完成：固定尺寸島嶼、4 種基本地形、約 8 種物種、�
 
 ## 下一步
 
-下一步仍在「階段 4：雲端帳號與島嶼管理」。JSON v1/v2 envelope 已抽成 `save-format.js`，7 個格式測試通過。登入、公開隱私設定和跨裝置同步仍需雲端權限服務；Supabase migration 與雙使用者 CRUD 的 pgTAP 測試已備妥，但 Docker Engine 無法在目前 Windows 環境啟動，尚未執行資料庫測試。待資料庫可用時先跑 migration/RLS，再接登入與同步。服務建議見 `knowledge/decision.md`。
+下一步仍在「階段 4：雲端帳號與島嶼管理」。JSON v1/v2 envelope 已抽成 `save-format.js`；`cloud-sync.js` 已提供依賴注入的 Supabase Auth 與私有島嶼 CRUD adapter，並以 Node mock 測試。正式 UI/連線需先有專案 URL、publishable key 與 redirect URL；套用 migration 並在可用資料庫跑過雙使用者 RLS 測試後，再開啟登入和裝置同步。Docker Engine 目前未啟動，詳細外部條件見 `knowledge/decision.md`。

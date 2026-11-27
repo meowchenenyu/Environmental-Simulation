@@ -311,3 +311,28 @@
 
 - `save-format.js` 仍由 `window.EcosystemSimulation` 提供物種 schema；若改成 Node 原生模組或服務端共用，需抽出跨執行環境的純模組格式。
 - `node --test tests/save-format.test.js` 通過 7 個測試；`node --check app.js`、`node --check save-format.js` 和 `git diff --check` 通過。瀏覽器按鈕和下載仍未做 UI 操作驗證。
+
+## 2026-11-27：加入可注入的 Supabase 雲端同步 adapter
+
+### 情境與結果
+
+前端部署仍是無建置步驟的靜態網站，且尚未建立 Supabase 專案，因此不把登入設定或第三方 SDK 強行綁進本機頁面。新增 `cloud-sync.js`，透過注入的 Supabase JS client 提供註冊、登入、登出、列島、保存、載入與刪除操作；每次資料存取先確認登入，保存只接受已通過共用格式驗證的 JSON v2，並明確寫入目前使用者 ID 和 private 預設。資料庫仍以 RLS 作為真正的存取邊界。
+
+### 實作經驗
+
+- **把供應商 SDK client 注入資料 adapter**：讓靜態頁的本機功能不依賴雲端設定，也可用 mock client 在 Node 測 CRUD 和錯誤路徑；正式 UI 可在取得 URL/key 後建立 SDK client 再連入。
+- **雲端保存重用已驗證的匯出 envelope**：避免另造第二種模擬資料 schema；在寫入前檢查格式和 UUID，metadata 必須與封套一致。
+- **每個 CRUD 入口都要求登入，但不把前端檢查當授權**：`owner_id` 取自 Auth 使用者，RLS 才負責拒絕跨使用者操作；資料庫測試仍是發布門檻。
+- **使用 private 作為每次保存的預設值**：在公開探索、分享和檢舉政策完成前不開放可見度選項。
+
+### 未來可套用範圍
+
+- 部署在 GitHub Pages 等靜態主機、以 Supabase JS SDK 連接 Auth/Postgres 的小型應用；同一 adapter pattern 也可用於替換資料供應商的測試 seam。
+- 已有本機 JSON 匯出格式，想逐步加登入與同步的互動工具；雲端寫入應沿用格式驗證並保留版本欄位。
+- 需要測試 RLS 前的 client CRUD 行為時，可用 mock 檢查資料 mapping、輸入拒絕和 SDK 錯誤傳遞，但 mock 不可取代真實 RLS 測試。
+
+### 已知限制與驗證紀錄
+
+- Adapter 尚未接到登入或島嶼管理 UI，沒有 Supabase URL/key；UUID 映射已依使用者 ID 分區保存在 localStorage，但尚未在真實帳號／多使用者情境驗證。Migration 未套用、真實 Auth/RLS/跨裝置同步未驗證。取得專案設定並跑完資料庫測試後再完成 UI。
+- Supabase 官方 JS SDK 支援 Auth 註冊／密碼登入及資料 upsert；本 adapter 依官方 client interface 實作（[SDK 安裝與 Data API](https://supabase.com/docs/reference/javascript/installing)、[signUp](https://supabase.com/docs/reference/javascript/auth-signup)、[signInWithPassword](https://supabase.com/docs/reference/javascript/auth-signinwithpassword)、[upsert](https://supabase.com/docs/reference/javascript/upsert)）。
+- `node --test tests/*.test.js` 通過 13 個測試，涵蓋格式和雲端 adapter；`node --check cloud-sync.js`、`node --check app.js` 和 `git diff --check` 通過。瀏覽器操作仍未驗證。
