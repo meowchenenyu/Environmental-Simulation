@@ -23,6 +23,17 @@ test('warmer air increases evaporation and lowers stored water', () => {
   assert.ok(warm.water < cool.water);
 });
 
+test('low stored water limits plant growth under the same weather and habitat', () => {
+  const dry = simulation.createInitialState();
+  const wet = simulation.createInitialState();
+  dry.resources.water = 12;
+  wet.resources.water = 72;
+  const dryNext = simulation.stepSimulation(dry, {});
+  const wetNext = simulation.stepSimulation(wet, {});
+  assert.ok(dryNext.resources['island-grass'] < wetNext.resources['island-grass']);
+  assert.ok(dryNext.resources['coastal-seagrass'] < wetNext.resources['coastal-seagrass']);
+});
+
 test('water balance clamps storage and reports a reproducible budget', () => {
   const dry = simulation.calculateWaterCycle(0, 42, 0, { wetland: 0, forest: 0 });
   const storm = simulation.calculateWaterCycle(100, 15, 99.9, { wetland: 60, forest: 30 });
