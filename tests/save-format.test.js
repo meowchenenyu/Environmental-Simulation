@@ -76,3 +76,9 @@ test('rejects snapshots whose label day differs from saved state', () => {
   }];
   assert.match(saveFormat.validate(save), /快照資料/);
 });
+
+test('rejects impossible negative water-cycle inflows', () => {
+  const save = validSave();
+  save.simulation.state.environment.waterCycle.infiltration = -1;
+  assert.match(saveFormat.validate(save), /模擬狀態/);
+});

@@ -1,0 +1,53 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const test = require('node:test');
+const vm = require('node:vm');
+
+const context = vm.createContext({ window: {} });
+vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'simulation.js'), 'utf8'), context);
+const simulation = context.window.EcosystemSimulation;
+
+test('wetlands retain more rain and reduce runoff', () => {
+  const dry = simulation.calculateWaterCycle(60, 25, 50, { wetland: 0, forest: 0 });
+  const wetland = simulation.calculateWaterCycle(60, 25, 50, { wetland: 30, forest: 0 });
+  assert.ok(wetland.infiltration > dry.infiltration);
+  assert.ok(wetland.runoff < dry.runoff);
+  assert.ok(wetland.water > dry.water);
+});
+
+test('warmer air increases evaporation and lowers stored water', () => {
+  const cool = simulation.calculateWaterCycle(55, 20, 50, { wetland: 10, forest: 20 });
+  const warm = simulation.calculateWaterCycle(55, 32, 50, { wetland: 10, forest: 20 });
+  assert.ok(warm.evaporation > cool.evaporation);
+  assert.ok(warm.water < cool.water);
+});
+
+test('water balance clamps storage and reports a reproducible budget', () => {
+  const dry = simulation.calculateWaterCycle(0, 42, 0, { wetland: 0, forest: 0 });
+  const storm = simulation.calculateWaterCycle(100, 15, 99.9, { wetland: 60, forest: 30 });
+  assert.equal(dry.water, 0);
+  assert.equal(storm.water, 100);
+  assert.equal(Math.round((storm.infiltration - storm.runoff - storm.evaporation) * 10) / 10, Math.round(storm.netChange * 10) / 10);
+});
+
+test('daily simulation records seasonal water budget and drought warning', () => {
+  const state = simulation.createInitialState();
+  state.day = 52;
+  state.resources.water = 35.05;
+  const next = simulation.stepSimulation(state, {});
+  assert.ok(next.environment.waterCycle);
+  assert.ok(next.events.some((event) => event.title === '淡水進入乾旱警戒'));
+});
+
+test('default island water does not become stuck at a storage limit across four years', () => {
+  let state = simulation.createInitialState();
+  const waterLevels = [];
+  for (let day = 0; day < 480; day += 1) {
+    state = simulation.stepSimulation(state, {});
+    waterLevels.push(state.resources.water);
+  }
+  assert.ok(Math.min(...waterLevels) > 0);
+  assert.ok(Math.max(...waterLevels) < 100);
+  assert.ok(Math.max(...waterLevels) - Math.min(...waterLevels) > 5);
+});

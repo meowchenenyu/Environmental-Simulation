@@ -336,3 +336,27 @@
 - Adapter 尚未接到登入或島嶼管理 UI，沒有 Supabase URL/key；UUID 映射已依使用者 ID 分區保存在 localStorage，但尚未在真實帳號／多使用者情境驗證。Migration 未套用、真實 Auth/RLS/跨裝置同步未驗證。取得專案設定並跑完資料庫測試後再完成 UI。
 - Supabase 官方 JS SDK 支援 Auth 註冊／密碼登入及資料 upsert；本 adapter 依官方 client interface 實作（[SDK 安裝與 Data API](https://supabase.com/docs/reference/javascript/installing)、[signUp](https://supabase.com/docs/reference/javascript/auth-signup)、[signInWithPassword](https://supabase.com/docs/reference/javascript/auth-signinwithpassword)、[upsert](https://supabase.com/docs/reference/javascript/upsert)）。
 - `node --test tests/*.test.js` 通過 13 個測試，涵蓋格式和雲端 adapter；`node --check cloud-sync.js`、`node --check app.js` 和 `git diff --check` 通過。瀏覽器操作仍未驗證。
+
+## 2026-11-27：擴充棲地影響下的水循環與乾旱警戒
+
+### 情境與結果
+
+階段 4 的登入／同步需要尚未提供的 Supabase 專案設定和可執行 RLS 的資料庫。為繼續處理可離線完成的路線圖工作，開始階段 6 的水循環項目：每日淡水存量現在由降雨補注、依濕地比例變化的滲透／逕流、依溫度和森林比例變化的蒸散共同決定；狀態記錄水量收支，進入低水位時寫入乾旱警戒事件，氣候卡摘要也會提示水量變化方向。
+
+### 實作經驗
+
+- **將環境收支寫成可單獨測試的純函式**：水量計算明確接收降雨、溫度、前日水量和棲地比例，回傳滲透、逕流、蒸散、淨變化及受上下限約束的存量，方便調整規則和驗證方向性。
+- **讓地形改變影響環境機制**：濕地提高降雨滲透並降低逕流，森林降低蒸散；測試應檢查相對方向（濕地更多時保水較多、溫度更高時蒸散較強），避免只鎖定某一個數值。
+- **把模型診斷存進狀態並延續到存檔驗證**：歷史／快照可以保留當時水循環收支；格式驗證接受舊存檔中沒有診斷欄位，但新欄位存在時檢查合理範圍。
+- **用跨越門檻的事件說明變化**：只在水量跨入警戒或恢復區間時新增事件，避免每日重複警告；事件附上當日收支及可調整的棲地線索。
+
+### 未來可套用範圍
+
+- 小型環境模擬或策略遊戲中，將降雨輸入、地表逕流、棲地滲透和蒸散分開表示，再把同一份收支用於視覺化和事件說明。
+- 舊版存檔逐步加入新模擬診斷時，可採選填欄位相容策略：舊檔可讀，新存檔再嚴格驗證新欄位。
+- 有警戒狀態的系統（缺水、資源短缺、溫度壓力），以門檻跨越事件取代每個週期重複提醒。
+
+### 已知限制與驗證紀錄
+
+- 這是為可解釋互動設計的簡化指標，沒有土壤深度、地形坡度、地下水、日照和實測天氣資料；不代表真實生態或水文預測。森林／濕地係數是遊戲平衡起點。範例島連續模擬 480 天水量介於 63.4–71.8，沒有觸發乾旱事件；警戒事件已由跨門檻狀態測試確認，仍需觀察各種玩家地形下是否會合理觸發。
+- 已新增濕地保水、升溫蒸散、水量上下限、收支可重現、乾旱警戒、非法收支拒絕，以及 480 天不飽和／不枯竭測試。`node --test tests/*.test.js` 通過 19 個測試；`node --check simulation.js`、`node --check save-format.js`、`node --check app.js` 和 `git diff --check` 通過。瀏覽器視覺操作仍未驗證。

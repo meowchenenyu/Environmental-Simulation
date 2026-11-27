@@ -141,7 +141,9 @@
     $('#humidity').textContent = environment.humidity;
     $('#rainfall').textContent = environment.rainfall;
     $('#weather-icon').textContent = environment.rainfall >= 82 ? '☂' : '☀';
-    $('#weather-summary').textContent = environment.rainfall >= 82 ? '降雨・水氣充足' : '晴朗・微風';
+    $('#weather-summary').textContent = environment.waterCycle?.netChange < -0.2
+      ? '蒸散較強・水量下降'
+      : environment.rainfall >= 82 ? '降雨・水氣充足' : '雨水補注・島嶼蒸散';
     const seasonIcons = { 春季: '❀', 夏季: '☀', 秋季: '🍂', 冬季: '❄' };
     $('#season-tag').textContent = `${seasonIcons[simulationState.season]} ${simulationState.season}`;
     const strongestChange = events[0];

@@ -33,6 +33,22 @@
     return seasons[Math.floor(((day + 6) % 120) / 30)];
   }
 
+  function calculateWaterCycle(rainfall, temperature, water, habitats) {
+    const wetland = habitats?.wetland ?? 0;
+    const forest = habitats?.forest ?? 0;
+    const rainfallInput = rainfall * 0.008;
+    const infiltration = rainfallInput * Math.min(0.96, 0.72 + wetland * 0.002);
+    const runoff = rainfallInput * Math.max(0.08, 0.34 - wetland * 0.002);
+    const evaporation = (0.12 + Math.max(0, temperature - 18) * 0.012 + water * 0.0012) * Math.max(0.7, 1 - forest * 0.001);
+    return {
+      infiltration,
+      runoff,
+      evaporation,
+      water: clamp(water + infiltration - runoff - evaporation),
+      netChange: infiltration - runoff - evaporation
+    };
+  }
+
   function metricsFor(state) {
     const aliveAnimals = species.filter((entry) => entry.kind === 'consumer' && state.populations[entry.id] > 0).length;
     const livingProducers = species.filter((entry) => entry.kind === 'producer' && state.resources[entry.id] > 0).length;
@@ -132,7 +148,13 @@
     const state = {
       day,
       season: season.name,
-      environment: { temperature: season.temperature, rainfall: season.rainfall, humidity: 72, water: resources.water },
+      environment: {
+        temperature: season.temperature,
+        rainfall: season.rainfall,
+        humidity: 72,
+        water: resources.water,
+        waterCycle: { infiltration: 0, runoff: 0, evaporation: 0, netChange: 0 }
+      },
       resources,
       populations,
       habitats: habitatFromTerrain(terrainEdits),
@@ -161,7 +183,8 @@
     resources['island-grass'] = clamp(resources['island-grass'] + (0.48 + habitats.grass * 0.016) * rainFactor - previousAnimals['blue-pigeon'] * 0.022 - previousAnimals['reef-crab'] * 0.014);
     resources['coastal-seagrass'] = clamp(resources['coastal-seagrass'] + (0.48 + habitats.wetland * 0.018) * rainFactor - previousAnimals['green-turtle'] * 0.025 - previousAnimals['reef-crab'] * 0.015);
     resources.nectar = clamp(resources.nectar + 0.62 * (resources['island-grass'] / 60) + 0.42 * rainFactor - previousAnimals['moonlight-butterfly'] * 0.025);
-    resources.water = clamp(resources.water + 0.55 * rainFactor - 0.16);
+    const waterCycle = calculateWaterCycle(rainfall, temperature, previous.resources.water, habitats);
+    resources.water = waterCycle.water;
 
     const frogLoss = Math.min(populations['tree-frog'], round(populations['island-lizard'] * 0.04));
     populations['tree-frog'] -= frogLoss;
@@ -201,9 +224,15 @@
         temperature,
         rainfall,
         humidity: clamp(round(51 + resources.water * 0.32 + rainfall * 0.12)),
-        water: round(resources.water)
+        water: round(resources.water),
+        waterCycle: {
+          infiltration: round(waterCycle.infiltration * 10) / 10,
+          runoff: round(waterCycle.runoff * 10) / 10,
+          evaporation: round(waterCycle.evaporation * 10) / 10,
+          netChange: round(waterCycle.netChange * 10) / 10
+        }
       },
-      resources: Object.fromEntries(Object.entries(resources).map(([key, value]) => [key, round(value)])),
+      resources: Object.fromEntries(Object.entries(resources).map(([key, value]) => [key, key === 'water' ? round(value * 10) / 10 : round(value)])),
       populations,
       habitats,
       distribution: migration.distribution,
@@ -214,6 +243,8 @@
 
     const events = [];
     if (migration.migrationActivity >= 24) events.push({ icon: '🧭', title: '物種分布隨棲地調整', detail: '部分族群逐步移向較合適的棲地', day });
+    if (previous.resources.water > 35 && next.resources.water <= 35) events.push({ icon: '🏜️', title: '淡水進入乾旱警戒', detail: `本日補注 ${next.environment.waterCycle.infiltration}，逕流 ${next.environment.waterCycle.runoff}，蒸散 ${next.environment.waterCycle.evaporation}；可增加濕地或森林以保水。`, day });
+    if (previous.resources.water < 45 && next.resources.water >= 45) events.push({ icon: '💧', title: '淡水存量恢復', detail: '島嶼水量回到較穩定範圍，注意後續降雨與蒸散變化。', day });
     if (previous.resources['island-grass'] > 25 && next.resources['island-grass'] <= 25) events.push({ icon: '⚠', title: '草原食物資源偏低', detail: '草食與雜食物種的食物供應減少', day });
     if (previous.resources['coastal-seagrass'] > 25 && next.resources['coastal-seagrass'] <= 25) events.push({ icon: '⚠', title: '海岸食物資源偏低', detail: '海草下降，海岸草食者面臨壓力', day });
     if (rainfall >= 82) events.push({ icon: '☂', title: '午後降雨滋養島嶼', detail: `降雨 ${rainfall}%，淡水量回升`, day });
@@ -254,6 +285,7 @@
   window.EcosystemSimulation = {
     species,
     metricsFor,
+    calculateWaterCycle,
     createInitialState,
     stepSimulation,
     syncHabitat
