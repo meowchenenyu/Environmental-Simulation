@@ -102,6 +102,33 @@ test('wildfire cooldown prevents repeated burns within 60 days', () => {
   assert.ok(fires <= 1);
 });
 
+test('humid conditions trigger a disease event and reduce tree frog population', () => {
+  const state = simulation.createInitialState();
+  state.day = 30;
+  state.resources.water = 100;
+  state.populations['tree-frog'] = 60;
+  const next = simulation.stepSimulation(state, {});
+  assert.ok(next.events.some((event) => event.title === '濕熱環境出現樹蛙疫病'));
+  assert.ok(next.populations['tree-frog'] < state.populations['tree-frog']);
+  assert.equal(next.lastDiseaseDay, next.day);
+});
+
+test('disease cooldown prevents repeated outbreak damage within 90 days', () => {
+  let state = simulation.createInitialState();
+  state.day = 30;
+  state.resources.water = 100;
+  state.populations['tree-frog'] = 60;
+  state = simulation.stepSimulation(state, {});
+  const outbreakDay = state.lastDiseaseDay;
+  let repeatedOutbreaks = 0;
+  for (let day = 0; day < 89; day += 1) {
+    state = simulation.stepSimulation({ ...state, resources: { ...state.resources, water: 100 }, populations: { ...state.populations, 'tree-frog': 60 } }, {});
+    if (state.events.some((event) => event.title === '濕熱環境出現樹蛙疫病' && event.day === state.day)) repeatedOutbreaks += 1;
+  }
+  assert.equal(repeatedOutbreaks, 0);
+  assert.equal(state.lastDiseaseDay, outbreakDay);
+});
+
 test('default island water does not become stuck at a storage limit across four years', () => {
   let state = simulation.createInitialState();
   const waterLevels = [];

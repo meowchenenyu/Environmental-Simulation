@@ -161,6 +161,7 @@
       distribution: Object.fromEntries(species.filter((entry) => entry.kind === 'consumer').map((entry) => [entry.id, distributePopulation(entry.preferredHabitats, habitatFromTerrain(terrainEdits))])),
       terrainEdits,
       lastFireDay: null,
+      lastDiseaseDay: null,
       events: initialEvents(day, resources, populations),
       series: [{ day, richness: 8, stability: 84, population: Object.values(populations).reduce((sum, value) => sum + value, 0), predators: populations['island-lizard'], vegetation: 62 }]
     };
@@ -225,6 +226,10 @@
       resources['island-grass'] = Math.max(0, resources['island-grass'] - 18);
       resources.nectar = Math.max(0, resources.nectar - 12);
     }
+    const diseaseCooldownElapsed = previous.lastDiseaseDay === null || previous.lastDiseaseDay === undefined ||
+      (Number.isSafeInteger(previous.lastDiseaseDay) && day - previous.lastDiseaseDay >= 90);
+    const diseaseOutbreak = environmentHumidity(rainfall, resources.water) >= 90 && populations['tree-frog'] >= 45 && diseaseCooldownElapsed;
+    if (diseaseOutbreak) populations['tree-frog'] = Math.max(0, round(populations['tree-frog'] * 0.8));
 
     const migration = migrateDistribution(previous, habitats);
     const next = {
@@ -248,6 +253,7 @@
       distribution: migration.distribution,
       terrainEdits,
       lastFireDay: wildfire ? day : (previous.lastFireDay ?? null),
+      lastDiseaseDay: diseaseOutbreak ? day : (previous.lastDiseaseDay ?? null),
       events: [...previous.events],
       series: [...previous.series]
     };
@@ -263,6 +269,7 @@
     if (previous.resources.water > 50 && next.resources.water <= 50) events.push({ icon: '🏜️', title: '淡水進入乾旱警戒', detail: `存量低於 50%，植被生長會受限。本日補注 ${next.environment.waterCycle.infiltration}，逕流 ${next.environment.waterCycle.runoff}，蒸散 ${next.environment.waterCycle.evaporation}；可增加濕地或森林以保水。`, day });
     if (previous.resources.water < 60 && next.resources.water >= 60) events.push({ icon: '💧', title: '淡水存量恢復', detail: '島嶼水量回到較穩定範圍，注意後續降雨與蒸散變化。', day });
     if (wildfire) events.push({ icon: '🔥', title: '乾旱熱浪引發林地火災', detail: '低水量與高溫讓林地燃燒，草叢覆蓋與花蜜資源減少；接下來需留意動物食物是否充足。', day });
+    if (diseaseOutbreak) events.push({ icon: '🦠', title: '濕熱環境出現樹蛙疫病', detail: '連續濕熱條件增加疫病壓力，樹蛙族群下降；後續族群仍會依棲地、食物與天氣變化。', day });
     if (previous.resources['island-grass'] > 25 && next.resources['island-grass'] <= 25) events.push({ icon: '⚠', title: '草原食物資源偏低', detail: '草食與雜食物種的食物供應減少', day });
     if (previous.resources['coastal-seagrass'] > 25 && next.resources['coastal-seagrass'] <= 25) events.push({ icon: '⚠', title: '海岸食物資源偏低', detail: '海草下降，海岸草食者面臨壓力', day });
     if (rainfall >= 82) events.push({ icon: '☂', title: '午後降雨滋養島嶼', detail: `降雨 ${rainfall}%，淡水量回升`, day });

@@ -57,6 +57,7 @@
     }
     if (!isRecord(state.distribution)) return false;
     if (state.lastFireDay !== undefined && state.lastFireDay !== null && (!Number.isSafeInteger(state.lastFireDay) || state.lastFireDay < 1 || state.lastFireDay > state.day)) return false;
+    if (state.lastDiseaseDay !== undefined && state.lastDiseaseDay !== null && (!Number.isSafeInteger(state.lastDiseaseDay) || state.lastDiseaseDay < 1 || state.lastDiseaseDay > state.day)) return false;
     for (const profile of simulation.species.filter((entry) => entry.kind === 'consumer')) {
       const shares = state.distribution[profile.id];
       if (!isRecord(shares) || !Object.values(shares).every((value) => Number.isFinite(value) && value >= 0 && value <= 100)) return false;
