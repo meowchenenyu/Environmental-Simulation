@@ -239,7 +239,7 @@
 ### 已知限制與驗證紀錄
 
 - migration 尚未套用；全域沒有 `supabase` CLI 或 `psql`，透過 npm registry 執行 `npx --yes supabase --version` 可取得 3.4.0。Docker Desktop Engine 回報 internal server error，手動啟動已安裝的 Windows 服務也遭系統拒絕。必須在可用測試專案或本機資料庫驗證 SQL、權限和 RLS 後，才可接前端。CLI 暫存目錄已加入 `.gitignore`。
-- 已新增 pgTAP 結構檢查草稿 `supabase/tests/database/islands_rls.test.sql`，涵蓋 RLS 開啟、owner policy、anon 權限與 authenticated grant；CLI 不在此環境，因此測試未執行，且仍需補上兩個登入身分的端對端隔離檢查。
+- 已新增 pgTAP 結構檢查 `supabase/tests/database/islands_rls.test.sql` 和雙帳號存取檢查 `supabase/tests/database/islands_rls_access.test.sql`，分別涵蓋 RLS/grant 與實際跨 owner CRUD。測試沿用 Supabase 官方 `set local role authenticated`、`request.jwt.claim.sub` 和交易 rollback 方法（[RLS pgTAP 測試指南](https://supabase.com/docs/guides/database/postgres/testing-row-level-security)）；CLI/Docker 環境未就緒，因此尚未執行。
 
 ## 2026-11-27：加入本機島嶼名稱、介紹與封面資料
 

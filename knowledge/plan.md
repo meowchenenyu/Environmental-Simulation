@@ -122,4 +122,4 @@ MVP 優先完成：固定尺寸島嶼、4 種基本地形、約 8 種物種、�
 
 ## 下一步
 
-下一步仍在「階段 4：雲端帳號與島嶼管理」。本機可編輯島嶼名稱、介紹與封面，JSON v2 會一併備份並相容匯入 v1；公開隱私設定仍等雲端權限政策落地。已準備 owner-scoped Postgres/RLS migration 與 pgTAP 結構測試草稿，但 Docker Engine 無法在目前 Windows 環境啟動，尚未執行資料庫測試。接著處理可離線完成的島嶼資料／同步介面，再於可用的測試資料庫驗證登入、RLS 和跨裝置保存。服務建議見 `knowledge/decision.md`。
+下一步仍在「階段 4：雲端帳號與島嶼管理」。本機可編輯島嶼名稱、介紹與封面，JSON v2 相容匯入 v1；公開隱私設定仍等雲端權限政策落地。Supabase migration 已有結構與雙使用者 CRUD 的 pgTAP 草稿，但 Docker Engine 無法在目前 Windows 環境啟動，尚未執行資料庫測試。接著處理可離線完成的島嶼資料／同步介面，再於可用的測試資料庫驗證登入、RLS 和跨裝置保存。服務建議見 `knowledge/decision.md`。
