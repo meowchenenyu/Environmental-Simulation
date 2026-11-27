@@ -6,7 +6,7 @@
 
 ### 狀態
 
-建議採用 Supabase 作為階段 4 第一版的託管資料庫與登入服務；尚未建立服務專案或連線，因此目前不含雲端程式設定。
+建議採用 Supabase 作為階段 4 第一版的託管資料庫與登入服務。`cloud-sync.js` 已完成 SDK adapter 和 mock 測試，但尚未建立服務專案或連線，因此尚無實際登入 UI、部署設定或雲端同步。
 
 ### 建議
 
@@ -25,7 +25,9 @@ Supabase 將 Auth 與 Postgres 整合，且 RLS 可在資料庫層按每列限�
 ### 尚待確認的外部條件
 
 - 建立 Supabase 專案並保管專案 URL 和 publishable key；金鑰不寫入版本控制，透過部署環境設定提供。
+- 在專案 Auth 設定中加入實際 GitHub Pages 網址作為允許的 redirect URL，並確認 email confirmation 流程。
 - 確認最終部署網址、登入方式、服務區域、帳號刪除與資料保留政策。
+- 啟動可用的 Supabase CLI/Docker 或測試專案，套用 migration 並先執行兩份 pgTAP RLS 測試；通過後再接登入和同步 UI。
 - Supabase 定價與免費方案限制會變動。依 2026-11-27 查閱的官方定價頁，免費方案標示 500 MB 資料庫，且閒置一週後專案會暫停；正式上線前需再次核對目前方案與備份條件：[Supabase 定價](https://supabase.com/pricing)。
 
-在上述設定未備妥前，可繼續完成本機 JSON 匯入／匯出、資料 schema、RLS migration 草稿和離線操作，不需要阻塞這些工作。
+在上述設定未備妥前，已完成可在 mock 下驗證的 Auth/CRUD adapter 和按使用者隔離的本機 UUID 對應；實際 UI、金鑰注入、schema 套用和跨帳號 RLS 測試需等外部設定備妥。
