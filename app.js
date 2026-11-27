@@ -12,6 +12,7 @@
   const terrainColors = { forest: '#356f50', grass: '#a7bc6a', wetland: '#48a9a5', sand: '#dfc783' };
   const terrainNames = { forest: '森林', grass: '草原', wetland: '濕地', sand: '沙灘', unsuitable: '無適宜棲地' };
   const storageKey = 'archipelago-observatory:tidal-between:terrain:v1';
+  const tutorialStorageKey = 'archipelago-observatory:tidal-between:tutorial:v1';
   let selectedTerrain = 'forest';
   let selectedCell = null;
   let painting = false;
@@ -408,6 +409,45 @@
     map.dataset.zoom = index === 0 ? Math.min(1.25, current + .08) : Math.max(.92, current - .08);
     map.style.transform = `scale(${map.dataset.zoom})`;
   }));
+
+  const tutorialDialog = $('#tutorial-dialog');
+  const tutorialSteps = [
+    ['先認識你的島', '這座範例島已有森林、濕地與海岸，也住著 8 種生產者和動物。地圖、物種卡和環境指標會一起呈現目前狀態。'],
+    ['試著改變棲地', '選「編輯島嶼」，再挑一種地形筆刷，點擊或拖曳地圖來繪製。地形變更會影響模擬中的棲地比例；完成後可按復原或重做。'],
+    ['讓時間往前走', '用播放按鈕連續觀察，或按右側箭頭一次推進一天。模擬會更新氣候、資源和族群；倒退按鈕可回到最近的紀錄。'],
+    ['閱讀生態變化', '查看島嶼日誌了解事件原因，在下方切換多樣性、動物族群和植被趨勢。點選物種卡，可查看牠的族群與偏好棲地。']
+  ];
+  let tutorialStep = 0;
+  function completeTutorial() {
+    try { localStorage.setItem(tutorialStorageKey, 'completed'); } catch { /* 仍可關閉教學 */ }
+    tutorialDialog.close();
+  }
+  function renderTutorialStep() {
+    const [title, copy] = tutorialSteps[tutorialStep];
+    $('#tutorial-step-label').textContent = `第 ${tutorialStep + 1} 步，共 ${tutorialSteps.length} 步`;
+    $('#tutorial-progress-fill').style.width = `${((tutorialStep + 1) / tutorialSteps.length) * 100}%`;
+    $('#tutorial-title').textContent = title;
+    $('#tutorial-copy').textContent = copy;
+    $('#tutorial-next').textContent = tutorialStep === tutorialSteps.length - 1 ? '開始探索 ✓' : '下一步 →';
+  }
+  function openTutorial() {
+    tutorialStep = 0;
+    renderTutorialStep();
+    if (!tutorialDialog.open) tutorialDialog.showModal();
+  }
+  $('#open-tutorial').addEventListener('click', openTutorial);
+  $('#skip-tutorial').addEventListener('click', completeTutorial);
+  $('#tutorial-next').addEventListener('click', () => {
+    if (tutorialStep === tutorialSteps.length - 1) return completeTutorial();
+    tutorialStep += 1;
+    renderTutorialStep();
+  });
+  tutorialDialog.addEventListener('cancel', () => {
+    try { localStorage.setItem(tutorialStorageKey, 'completed'); } catch { /* 仍可關閉教學 */ }
+  });
+  try {
+    if (localStorage.getItem(tutorialStorageKey) !== 'completed') openTutorial();
+  } catch { openTutorial(); }
 
   renderDay();
 })();

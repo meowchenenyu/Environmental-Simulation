@@ -33,4 +33,19 @@
 .chart-legend>span{display:inline-flex;align-items:center}
 .species-change.negative{color:#ca8d6b}
 .event-badge{background:#f0f3e8}
+
+/* First-run tutorial */
+.tutorial-link{font-size:10px;padding:7px 10px;border:1px solid #e8ebe2;border-radius:7px}
+.tutorial-dialog{width:min(440px,calc(100vw - 32px));padding:22px;border:1px solid #e7eadf;border-radius:14px;background:#fffefa;color:#38473d;box-shadow:0 24px 80px #233d3533}
+.tutorial-dialog::backdrop{background:#18342db3;backdrop-filter:blur(3px)}
+.tutorial-topline{display:flex;align-items:center;justify-content:space-between}
+.tutorial-skip{border:0;background:none;color:#829085;font-size:11px;cursor:pointer;padding:6px}
+.tutorial-progress{height:4px;margin:17px 0 14px;background:#edf0e8;border-radius:9px;overflow:hidden}
+.tutorial-progress i{display:block;height:100%;width:25%;background:#79a783;border-radius:9px;transition:width .2s ease}
+.tutorial-step-label{margin:0;color:#96a097;font-size:10px}
+.tutorial-dialog h2{margin:9px 0 7px;font-size:21px;font-weight:650}
+.tutorial-copy{min-height:66px;margin:0;color:#77847a;font-size:13px;line-height:1.8}
+.tutorial-actions{display:flex;justify-content:flex-end;margin-top:18px}
+.tutorial-actions .play-button{width:auto;padding:0 15px;font-size:11px}
+@media(max-width:540px){.tutorial-dialog{padding:18px}.tutorial-dialog h2{font-size:19px}.tutorial-copy{font-size:12px}}
 .species-art.grass{background:#eff3df}.species-art.seagrass{background:#e7f2eb}.species-art.crab{background:#f7eee3}.species-art.lizard{background:#e9efe2}

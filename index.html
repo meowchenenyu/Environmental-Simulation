@@ -25,7 +25,7 @@
     </aside>
 
     <main id="top" class="main-content">
-      <header class="topbar"><div class="breadcrumbs">我的島嶼 <span>/</span> <strong>潮汐之間</strong></div><div class="top-actions"><button class="icon-button" aria-label="通知">♧<i></i></button><div class="avatar" aria-label="使用者">林</div></div></header>
+      <header class="topbar"><div class="breadcrumbs">我的島嶼 <span>/</span> <strong>潮汐之間</strong></div><div class="top-actions"><button id="open-tutorial" class="text-button tutorial-link">操作教學</button><button class="icon-button" aria-label="通知">♧<i></i></button><div class="avatar" aria-label="使用者">林</div></div></header>
 
       <section class="welcome-row"><div><div class="eyebrow"><span class="live-dot"></span> 生態系正在呼吸</div><h1>潮汐之間<span class="title-spark">✳</span></h1><p class="subhead">一座被暖流環抱的島，今天會有什麼新發現？</p></div><button id="edit-island" class="quiet-button" aria-pressed="false">✎ <span>編輯島嶼</span></button></section>
 
@@ -74,5 +74,12 @@
     </main>
   </div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <dialog id="tutorial-dialog" class="tutorial-dialog" aria-labelledby="tutorial-title">
+    <div class="tutorial-topline"><span class="section-kicker">群島觀察誌・快速導覽</span><button id="skip-tutorial" class="tutorial-skip">略過教學</button></div>
+    <div class="tutorial-progress" aria-hidden="true"><i id="tutorial-progress-fill"></i></div>
+    <p id="tutorial-step-label" class="tutorial-step-label">第 1 步，共 4 步</p>
+    <h2 id="tutorial-title"></h2><p id="tutorial-copy" class="tutorial-copy"></p>
+    <div class="tutorial-actions"><button id="tutorial-next" class="play-button">下一步 →</button></div>
+  </dialog>
 </body>
 </html>
