@@ -1,6 +1,6 @@
 # 虛擬生態系模擬器：願景與開發路線圖
 
-> 狀態：階段 1–3 已完成；階段 4 已完成 JSON 匯出／匯入、Supabase schema/RLS 草稿、本機島嶼資料編輯與離線複製／分支；尚未連接雲端帳號或同步。
+> 狀態：階段 1–3 已完成；階段 4 已完成 JSON 匯出／匯入、存檔格式模組與測試、Supabase schema/RLS 草稿、本機島嶼資料編輯及離線複製／分支；尚未連接雲端帳號或同步。
 > 更新日期：2026-11-27
 
 ## 願景
@@ -122,4 +122,4 @@ MVP 優先完成：固定尺寸島嶼、4 種基本地形、約 8 種物種、�
 
 ## 下一步
 
-下一步仍在「階段 4：雲端帳號與島嶼管理」。本機最多可管理 20 座島嶼、複製存檔與從快照分支；資料仍只在本機。公開隱私設定、登入和跨裝置同步仍需雲端權限服務。Supabase migration 已有結構與雙使用者 CRUD 的 pgTAP 草稿，但 Docker Engine 無法在目前 Windows 環境啟動，尚未執行資料庫測試。待資料庫可用時先執行 migration 和 RLS 測試，再接登入與同步。服務建議見 `knowledge/decision.md`。
+下一步仍在「階段 4：雲端帳號與島嶼管理」。JSON v1/v2 envelope 已抽成 `save-format.js`，7 個格式測試通過。登入、公開隱私設定和跨裝置同步仍需雲端權限服務；Supabase migration 與雙使用者 CRUD 的 pgTAP 測試已備妥，但 Docker Engine 無法在目前 Windows 環境啟動，尚未執行資料庫測試。待資料庫可用時先跑 migration/RLS，再接登入與同步。服務建議見 `knowledge/decision.md`。

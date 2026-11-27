@@ -7,7 +7,7 @@
   let activeChart = 'richness';
   const EcosystemSimulation = window.EcosystemSimulation;
   const defaultIslandMetadata = { name: '潮汐之間', description: '一座被暖流環抱的島，今天會有什麼新發現？', cover: '🌴' };
-  const islandCovers = ['🌴', '🌿', '🌊', '🏝️', '🌳'];
+  const islandCovers = window.ArchipelagoSaveFormat.covers;
   const islandLibraryStorageKey = 'archipelago-observatory:islands:v1';
   const activeIslandStorageKey = 'archipelago-observatory:active-island:v1';
   let activeIslandId = 'tidal-between';
@@ -871,58 +871,6 @@
   const storageDialog = $('#storage-dialog');
   const resetDialog = $('#reset-dialog');
   let pendingReset = null;
-  function isRecord(value) {
-    return value !== null && typeof value === 'object' && !Array.isArray(value);
-  }
-  function validTerrainData(value) {
-    if (!isRecord(value) || Object.keys(value).length > 180) return false;
-    return Object.entries(value).every(([cell, type]) => {
-      const match = /^(\d+)-(\d+)$/.exec(cell);
-      return match && Number(match[1]) < 18 && Number(match[2]) < 10 && ['forest', 'grass', 'wetland', 'sand'].includes(type);
-    });
-  }
-  function validSimulationState(state) {
-    if (!isRecord(state) || !Number.isSafeInteger(state.day) || state.day < 1 || state.day > 1000000) return false;
-    if (!['春季', '夏季', '秋季', '冬季'].includes(state.season)) return false;
-    if (!isRecord(state.environment) || !isRecord(state.resources) || !isRecord(state.populations)) return false;
-    const environment = state.environment;
-    if (!Number.isFinite(environment.temperature) || environment.temperature < -20 || environment.temperature > 60) return false;
-    for (const key of ['rainfall', 'humidity', 'water']) {
-      if (!Number.isFinite(environment[key]) || environment[key] < 0 || environment[key] > 100) return false;
-    }
-    for (const profile of EcosystemSimulation.species) {
-      const values = profile.kind === 'producer' ? state.resources : state.populations;
-      const amount = values[profile.id];
-      if (!Number.isFinite(amount) || amount < 0 || amount > (profile.kind === 'producer' ? 100 : 10000) || (profile.kind !== 'producer' && !Number.isSafeInteger(amount))) return false;
-    }
-    for (const key of ['nectar', 'water']) {
-      if (!Number.isFinite(state.resources[key]) || state.resources[key] < 0 || state.resources[key] > 100) return false;
-    }
-    if (!isRecord(state.distribution)) return false;
-    for (const profile of EcosystemSimulation.species.filter((entry) => entry.kind === 'consumer')) {
-      const shares = state.distribution[profile.id];
-      if (!isRecord(shares) || !Object.values(shares).every((value) => Number.isFinite(value) && value >= 0 && value <= 100)) return false;
-      const total = Object.values(shares).reduce((sum, value) => sum + value, 0);
-      if (Math.abs(total - 100) > 1) return false;
-    }
-    if (!Array.isArray(state.events) || state.events.length > 20 || !state.events.every((event) => isRecord(event) && typeof event.title === 'string' && typeof event.detail === 'string' && typeof event.icon === 'string' && Number.isSafeInteger(event.day))) return false;
-    if (!Array.isArray(state.series) || state.series.length < 1 || state.series.length > 30) return false;
-    const seriesFields = ['day', 'richness', 'stability', 'population', 'predators', 'vegetation'];
-    return state.series.every((point) => isRecord(point) && Number.isSafeInteger(point.day) && point.day > 0 && seriesFields.slice(1).every((field) => Number.isFinite(point[field]) && point[field] >= 0));
-  }
-  function validateSaveFile(data) {
-    if (!isRecord(data) || data.format !== 'archipelago-observatory-save' || ![1, 2].includes(data.formatVersion)) return '不支援這個存檔格式或版本。';
-    if (data.formatVersion === 2 && (!isRecord(data.metadata) || typeof data.metadata.name !== 'string' || !data.metadata.name.trim() || data.metadata.name.length > 80 || typeof data.metadata.description !== 'string' || data.metadata.description.length > 500 || !islandCovers.includes(data.metadata.cover))) return '島嶼名稱、介紹或封面資料有誤。';
-    if (!validTerrainData(data.terrain)) return '地形資料不完整或包含無效格子。';
-    const sim = data.simulation;
-    if (!isRecord(sim) || !validSimulationState(sim.state)) return '模擬狀態不完整或數值超出範圍。';
-    const validStateList = (states) => Array.isArray(states) && states.length <= 30 && states.every(validSimulationState);
-    if (!validStateList(sim.history || []) || !validStateList(sim.redoHistory || [])) return '模擬回退紀錄格式有誤。';
-    if (!Array.isArray(sim.snapshots || []) || sim.snapshots.length > 10 || !(sim.snapshots || []).every((snapshot) =>
-      isRecord(snapshot) && typeof snapshot.id === 'string' && Number.isSafeInteger(snapshot.day) && snapshot.day === snapshot.state?.day && validSimulationState(snapshot.state) && validTerrainData(snapshot.terrain) && Number.isFinite(Date.parse(snapshot.createdAt)))) return '快照資料格式有誤。';
-    if (data.challengeStartDay !== null && (!Number.isSafeInteger(data.challengeStartDay) || data.challengeStartDay < 1 || data.challengeStartDay > 1000000)) return '挑戰進度格式有誤。';
-    return '';
-  }
   function renderIslandMetadata() {
     $('#island-heading').textContent = islandMetadata.name;
     $('#breadcrumb-island-name').textContent = islandMetadata.name;
@@ -985,20 +933,15 @@
     toast('島嶼名稱、介紹與封面已保存。');
   });
   $('#export-save').addEventListener('click', () => {
-    const exportData = {
-      format: 'archipelago-observatory-save',
-      formatVersion: 2,
-      exportedAt: new Date().toISOString(),
-      metadata: JSON.parse(JSON.stringify(islandMetadata)),
-      terrain: JSON.parse(JSON.stringify(terrain)),
-      simulation: {
-        state: JSON.parse(JSON.stringify(simulationState)),
-        history: JSON.parse(JSON.stringify(simulationHistory.slice(-30))),
-        redoHistory: JSON.parse(JSON.stringify(simulationRedoHistory.slice(-30))),
-        snapshots: JSON.parse(JSON.stringify(simulationSnapshots.slice(0, 10)))
-      },
+    const exportData = window.ArchipelagoSaveFormat.create({
+      metadata: islandMetadata,
+      terrain,
+      state: simulationState,
+      history: simulationHistory,
+      redoHistory: simulationRedoHistory,
+      snapshots: simulationSnapshots,
       challengeStartDay
-    };
+    });
     const file = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(file);
     const link = document.createElement('a');
@@ -1020,7 +963,7 @@
     let imported;
     try { imported = JSON.parse(await file.text()); }
     catch { return toast('無法讀取 JSON 存檔，請檢查檔案內容。'); }
-    const validationMessage = validateSaveFile(imported);
+    const validationMessage = window.ArchipelagoSaveFormat.validate(imported);
     if (validationMessage) return toast(validationMessage);
     if (!window.confirm('匯入會取代目前瀏覽器的地形、模擬、快照、挑戰進度與島嶼名稱介紹。建議先匯出備份。要繼續嗎？')) return;
 

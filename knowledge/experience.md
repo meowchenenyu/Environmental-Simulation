@@ -288,3 +288,26 @@
 
 - 本機上限為 20 座，清單與每座島都只有目前瀏覽器設定檔可用；尚無雲端同步、裝置間複製、隱私設定或復原刪除。
 - `node --check app.js`、`node --check simulation.js`、HTML 唯一 ID 與 CSS 區塊檢查通過。因瀏覽器 URL 政策和 Docker Engine 狀態，未完成 UI 重載流程與雲端 RLS 操作驗證。
+
+## 2026-11-27：抽出可測試的版本化存檔格式模組
+
+### 情境與結果
+
+存檔 envelope 與匯入驗證原本放在大型 UI 控制器內，難以在沒有瀏覽器的環境驗證。新增 `save-format.js` 作為純資料模組，集中建立 v2 envelope、保留 v1 相容匯入，以及檢查地形、模擬狀態、快照與 metadata；前端匯出和匯入共用同一模組。使用 Node 內建測試執行器新增 7 個測試，不增加 runtime 套件。
+
+### 實作經驗
+
+- **把純資料規則從 DOM 控制器分離**：存檔格式只依賴模擬資料和 JSON，不需要 `document`、localStorage 或瀏覽器互動，因此可在 Node 虛擬環境直接測試。
+- **驗證接受與拒絕路徑**：測試同時覆蓋 v1/v2 有效檔案、版本上限、非法格子、空島嶼名稱、負族群及快照日數不一致，避免只證明「正常資料能過」。
+- **用同一模組產生和檢查 envelope**：匯出以 `create()` 限制歷史和快照數量，匯入以 `validate()` 檢查邊界，減少前端和未來同步 API 使用不同 schema 的機會。
+
+### 未來可套用範圍
+
+- 靜態網站和小型前端，可把資料格式獨立於畫面後用 Node 測試，不必先安裝完整瀏覽器自動化套件。
+- 本機備份、雲端同步 API 和島嶼複製流程共用的序列化 schema。
+- 有多個版本使用者資料的應用，以純函式測試向前相容和錯誤輸入拒絕。
+
+### 已知限制與驗證紀錄
+
+- `save-format.js` 仍由 `window.EcosystemSimulation` 提供物種 schema；若改成 Node 原生模組或服務端共用，需抽出跨執行環境的純模組格式。
+- `node --test tests/save-format.test.js` 通過 7 個測試；`node --check app.js`、`node --check save-format.js` 和 `git diff --check` 通過。瀏覽器按鈕和下載仍未做 UI 操作驗證。
