@@ -133,8 +133,10 @@
   function saveSimulation() {
     try {
       localStorage.setItem(simulationStorageKey, JSON.stringify({ state: simulationState, history: simulationHistory.slice(-30) }));
+      return true;
     } catch {
       toast('瀏覽器儲存空間不足，模擬進度未能保存。');
+      return false;
     }
   }
 
@@ -246,8 +248,10 @@
     try {
       localStorage.setItem(storageKey, JSON.stringify(terrain));
       $('#editor-save-state').textContent = '已儲存於此裝置';
+      return true;
     } catch {
       $('#editor-save-state').textContent = '無法儲存';
+      return false;
     }
   }
 
@@ -491,6 +495,60 @@
       toast('初階挑戰開始：觀察接下來 7 天。');
     }
     renderChallenge();
+  });
+  const storageDialog = $('#storage-dialog');
+  const resetDialog = $('#reset-dialog');
+  let pendingReset = null;
+  function renderStorageSummary() {
+    $('#storage-summary').textContent = `模擬進度：第 ${simulationState.day} 天；自訂地形：${Object.keys(terrain).length} 格。資料會自動保存在目前瀏覽器的本機儲存空間。`;
+  }
+  function requestReset(kind) {
+    pendingReset = kind;
+    $('#reset-copy').textContent = kind === 'simulation'
+      ? '這會把模擬日數、族群、資源和趨勢恢復為範例起始狀態，但會保留你畫過的地形。此操作無法復原。'
+      : '這會清除所有自訂地形筆刷，恢復範例島外觀；目前模擬進度會保留並依範例地形重新計算。此操作無法復原。';
+    resetDialog.showModal();
+  }
+  $('#open-storage').addEventListener('click', () => {
+    renderStorageSummary();
+    storageDialog.showModal();
+  });
+  $('#close-storage').addEventListener('click', () => storageDialog.close());
+  $('#save-now').addEventListener('click', () => {
+    const terrainSaved = saveTerrain();
+    const simulationSaved = saveSimulation();
+    renderStorageSummary();
+    toast(terrainSaved && simulationSaved ? '已保存目前的地形與模擬進度。' : '部分資料未能保存，請檢查瀏覽器儲存空間。');
+  });
+  $('#restart-simulation').addEventListener('click', () => requestReset('simulation'));
+  $('#restore-terrain').addEventListener('click', () => requestReset('terrain'));
+  $('#cancel-reset').addEventListener('click', () => { pendingReset = null; resetDialog.close(); });
+  $('#confirm-reset').addEventListener('click', () => {
+    if (pendingReset === 'simulation') {
+      pause();
+      simulationState = EcosystemSimulation.syncHabitat(EcosystemSimulation.createInitialState(), terrain);
+      simulationHistory = [];
+      challengeStartDay = null;
+      try { localStorage.removeItem(challengeStorageKey); } catch { /* 模擬仍可重設 */ }
+      saveSimulation();
+      toast('模擬已重新開始，自訂地形已保留。');
+    } else if (pendingReset === 'terrain') {
+      terrain = {};
+      undoStack = [];
+      redoStack = [];
+      selectedCell = null;
+      $('#selected-cell').setAttribute('visibility', 'hidden');
+      renderTerrain();
+      saveTerrain();
+      updateHistoryButtons();
+      simulationState = EcosystemSimulation.syncHabitat(simulationState, terrain);
+      saveSimulation();
+      toast('自訂地形已清除，已恢復範例島。');
+    }
+    pendingReset = null;
+    resetDialog.close();
+    storageDialog.close();
+    renderDay();
   });
   $('#skip-tutorial').addEventListener('click', completeTutorial);
   $('#tutorial-next').addEventListener('click', () => {

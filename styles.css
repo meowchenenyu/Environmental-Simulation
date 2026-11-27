@@ -61,4 +61,13 @@
 .challenge-action{flex:0 0 auto;padding:7px 10px;border:1px solid #dce5d9;border-radius:7px;background:#fffefa;color:#5e8064;font-size:9px;cursor:pointer}
 .challenge-action:hover{background:#edf3e8}
 @media(max-width:540px){.challenge-panel{gap:9px;padding:10px}.challenge-copy p{font-size:8px}.challenge-action{padding:7px;font-size:8px}}
+.storage-link{font-size:10px;padding:7px 10px;border:1px solid #e8ebe2;border-radius:7px}
+.storage-dialog h2{margin-bottom:8px}
+.storage-dialog .tutorial-copy{min-height:0}
+.storage-actions{display:grid;gap:8px;margin-top:16px}
+.storage-actions .challenge-action{text-align:left;padding:10px 12px;font-size:10px}
+.destructive-action{border-color:#eaded5;color:#a16f58}
+.destructive-action:hover{background:#faf2ed}
+.storage-note{margin:14px 0 0;color:#9aa39a;font-size:9px;line-height:1.7}
+@media(max-width:540px){.top-actions{gap:5px}.top-actions .icon-button,.top-actions .avatar{display:none}.top-actions .storage-link,.top-actions .challenge-link,.top-actions .tutorial-link{padding:6px;font-size:8px}.breadcrumbs{font-size:9px}}
 .species-art.grass{background:#eff3df}.species-art.seagrass{background:#e7f2eb}.species-art.crab{background:#f7eee3}.species-art.lizard{background:#e9efe2}

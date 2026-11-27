@@ -25,7 +25,7 @@
     </aside>
 
     <main id="top" class="main-content">
-      <header class="topbar"><div class="breadcrumbs">我的島嶼 <span>/</span> <strong>潮汐之間</strong></div><div class="top-actions"><button id="open-challenge" class="text-button challenge-link">🌱 初階挑戰</button><button id="open-tutorial" class="text-button tutorial-link">操作教學</button><button class="icon-button" aria-label="通知">♧<i></i></button><div class="avatar" aria-label="使用者">林</div></div></header>
+      <header class="topbar"><div class="breadcrumbs">我的島嶼 <span>/</span> <strong>潮汐之間</strong></div><div class="top-actions"><button id="open-storage" class="text-button storage-link">存檔</button><button id="open-challenge" class="text-button challenge-link">🌱 初階挑戰</button><button id="open-tutorial" class="text-button tutorial-link">操作教學</button><button class="icon-button" aria-label="通知">♧<i></i></button><div class="avatar" aria-label="使用者">林</div></div></header>
 
       <section class="welcome-row"><div><div class="eyebrow"><span class="live-dot"></span> 生態系正在呼吸</div><h1>潮汐之間<span class="title-spark">✳</span></h1><p class="subhead">一座被暖流環抱的島，今天會有什麼新發現？</p></div><button id="edit-island" class="quiet-button" aria-pressed="false">✎ <span>編輯島嶼</span></button></section>
 
@@ -82,6 +82,18 @@
     <p id="tutorial-step-label" class="tutorial-step-label">第 1 步，共 4 步</p>
     <h2 id="tutorial-title"></h2><p id="tutorial-copy" class="tutorial-copy"></p>
     <div class="tutorial-actions"><button id="tutorial-next" class="play-button">下一步 →</button></div>
+  </dialog>
+  <dialog id="storage-dialog" class="tutorial-dialog storage-dialog" aria-labelledby="storage-title">
+    <div class="tutorial-topline"><span class="section-kicker">本機資料</span><button id="close-storage" class="tutorial-skip">關閉</button></div>
+    <h2 id="storage-title">存檔管理</h2>
+    <p id="storage-summary" class="tutorial-copy"></p>
+    <div class="storage-actions"><button id="save-now" class="challenge-action">立即保存</button><button id="restart-simulation" class="challenge-action">重新開始模擬</button><button id="restore-terrain" class="challenge-action destructive-action">還原範例地形</button></div>
+    <p class="storage-note">地形與模擬會自動保存在此瀏覽器。重新開始模擬會保留自訂地形；還原範例地形會清除地形筆刷修改。</p>
+  </dialog>
+  <dialog id="reset-dialog" class="tutorial-dialog" aria-labelledby="reset-title">
+    <div class="tutorial-topline"><span class="section-kicker">請確認操作</span><button id="cancel-reset" class="tutorial-skip">取消</button></div>
+    <h2 id="reset-title">確定要重設嗎？</h2><p id="reset-copy" class="tutorial-copy"></p>
+    <div class="tutorial-actions"><button id="confirm-reset" class="challenge-action destructive-action">確認重設</button></div>
   </dialog>
 </body>
 </html>
