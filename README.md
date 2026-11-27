@@ -23,4 +23,4 @@ GitHub Actions workflow 位於 `.github/workflows/deploy.yml`。推送到 `main`
 - `knowledge/decision.md`：待外部服務設定的選擇與建議。
 - `supabase/migrations/`：雲端島嶼資料表與擁有者 RLS 的未套用草稿。
 
-在頁面頂端開啟「存檔」，可編輯島嶼名稱、介紹與封面圖示，匯出 JSON v2 備份或匯入 v1／v2 存檔。地形、島嶼資料與模擬狀態保存在目前瀏覽器的 localStorage，不會自動同步至其他裝置。Supabase migration 目前只是草稿，尚未連接雲端服務。模擬使用簡化的確定性規則，供互動探索，不作為生態科學預測。
+在頁面頂端開啟「存檔」，可編輯島嶼名稱、介紹與封面圖示、管理最多 20 座本機島嶼、複製島嶼或從快照建立分支，也可匯出 JSON v2 備份或匯入 v1／v2 存檔。地形、島嶼資料與模擬狀態保存在目前瀏覽器的 localStorage，不會自動同步至其他裝置。Supabase migration 目前只是草稿，尚未連接雲端服務。模擬使用簡化的確定性規則，供互動探索，不作為生態科學預測。

@@ -6,12 +6,46 @@
   let toastTimer;
   let activeChart = 'richness';
   const EcosystemSimulation = window.EcosystemSimulation;
-  const simulationStorageKey = 'archipelago-observatory:tidal-between:simulation:v1';
-  const challengeStorageKey = 'archipelago-observatory:tidal-between:challenge:v1';
-  const islandMetadataStorageKey = 'archipelago-observatory:tidal-between:island:v1';
   const defaultIslandMetadata = { name: '潮汐之間', description: '一座被暖流環抱的島，今天會有什麼新發現？', cover: '🌴' };
   const islandCovers = ['🌴', '🌿', '🌊', '🏝️', '🌳'];
-  let islandMetadata = { ...defaultIslandMetadata };
+  const islandLibraryStorageKey = 'archipelago-observatory:islands:v1';
+  const activeIslandStorageKey = 'archipelago-observatory:active-island:v1';
+  let activeIslandId = 'tidal-between';
+  let islandLibrary = [];
+  try {
+    const selectedId = localStorage.getItem(activeIslandStorageKey);
+    if (selectedId && /^[a-zA-Z0-9-]{1,80}$/.test(selectedId)) activeIslandId = selectedId;
+    const storedLibrary = JSON.parse(localStorage.getItem(islandLibraryStorageKey) || '[]');
+    if (Array.isArray(storedLibrary)) {
+      const seen = new Set();
+      islandLibrary = storedLibrary.filter((island) => {
+        const valid = island && /^[a-zA-Z0-9-]{1,80}$/.test(island.id) && typeof island.name === 'string' && island.name.trim() &&
+          typeof island.description === 'string' && islandCovers.includes(island.cover) && !seen.has(island.id);
+        if (valid) seen.add(island.id);
+        return valid;
+      }).slice(0, 20).map((island) => ({
+        id: island.id,
+        name: island.name.slice(0, 80),
+        description: island.description.slice(0, 500),
+        cover: island.cover,
+        day: Number.isSafeInteger(island.day) && island.day > 0 ? island.day : 24,
+        createdAt: typeof island.createdAt === 'string' ? island.createdAt : new Date().toISOString(),
+        updatedAt: typeof island.updatedAt === 'string' ? island.updatedAt : ''
+      }));
+    }
+  } catch { islandLibrary = []; }
+  if (!islandLibrary.length) activeIslandId = 'tidal-between';
+  else if (!islandLibrary.some((island) => island.id === activeIslandId)) activeIslandId = islandLibrary[0].id;
+  try { localStorage.setItem(activeIslandStorageKey, activeIslandId); } catch { /* 仍可使用單島預設資料 */ }
+  const islandStorageKey = (islandId, type) => `archipelago-observatory:${islandId}:${type}:v1`;
+  let simulationStorageKey = islandStorageKey(activeIslandId, 'simulation');
+  let challengeStorageKey = islandStorageKey(activeIslandId, 'challenge');
+  let islandMetadataStorageKey = islandStorageKey(activeIslandId, 'island');
+  let storageKey = islandStorageKey(activeIslandId, 'terrain');
+  const indexedActiveIsland = islandLibrary.find((island) => island.id === activeIslandId);
+  let islandMetadata = indexedActiveIsland
+    ? { name: indexedActiveIsland.name, description: indexedActiveIsland.description, cover: indexedActiveIsland.cover }
+    : { ...defaultIslandMetadata };
   try {
     const savedMetadata = JSON.parse(localStorage.getItem(islandMetadataStorageKey) || 'null');
     if (savedMetadata && typeof savedMetadata === 'object' && !Array.isArray(savedMetadata)) {
@@ -20,6 +54,10 @@
       if (islandCovers.includes(savedMetadata.cover)) islandMetadata.cover = savedMetadata.cover;
     }
   } catch { /* 島嶼介紹使用範例預設值 */ }
+  if (!islandLibrary.length) {
+    islandLibrary = [{ id: activeIslandId, ...islandMetadata, day: 24, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }];
+    try { localStorage.setItem(islandLibraryStorageKey, JSON.stringify(islandLibrary)); } catch { /* 仍可在此頁使用單島 */ }
+  }
   let challengeStartDay = null;
   try {
     const savedChallengeDay = Number(localStorage.getItem(challengeStorageKey));
@@ -31,7 +69,6 @@
   let simulationSnapshots = [];
   const terrainColors = { forest: '#356f50', grass: '#a7bc6a', wetland: '#48a9a5', sand: '#dfc783' };
   const terrainNames = { forest: '森林', grass: '草原', wetland: '濕地', sand: '沙灘', unsuitable: '無適宜棲地' };
-  const storageKey = 'archipelago-observatory:tidal-between:terrain:v1';
   const tutorialStorageKey = 'archipelago-observatory:tidal-between:tutorial:v1';
   let selectedTerrain = 'forest';
   let selectedCell = null;
@@ -64,6 +101,20 @@
     simulationSnapshots = [];
   }
   simulationState = EcosystemSimulation.syncHabitat(simulationState, terrain);
+
+  function persistIslandLibrary() {
+    let island = islandLibrary.find((entry) => entry.id === activeIslandId);
+    if (!island) {
+      island = { id: activeIslandId, createdAt: new Date().toISOString() };
+      islandLibrary.push(island);
+    }
+    Object.assign(island, islandMetadata, { day: simulationState.day, updatedAt: new Date().toISOString() });
+    try {
+      localStorage.setItem(islandLibraryStorageKey, JSON.stringify(islandLibrary));
+      return true;
+    } catch { return false; }
+  }
+  persistIslandLibrary();
 
   function toast(message) {
     const el = $('#toast');
@@ -161,6 +212,7 @@
         redoHistory: simulationRedoHistory.slice(-30),
         snapshots: simulationSnapshots.slice(0, 10)
       }));
+      persistIslandLibrary();
       return true;
     } catch {
       toast('瀏覽器儲存空間不足，模擬進度未能保存。');
@@ -277,6 +329,7 @@
     try {
       localStorage.setItem(storageKey, JSON.stringify(terrain));
       $('#editor-save-state').textContent = '已儲存於此裝置';
+      persistIslandLibrary();
       return true;
     } catch {
       $('#editor-save-state').textContent = '無法儲存';
@@ -544,7 +597,167 @@
   });
   const snapshotsDialog = $('#snapshots-dialog');
   const snapshotList = $('#snapshot-list');
+  const islandsDialog = $('#islands-dialog');
+  const islandList = $('#island-list');
   let snapshotSequence = 0;
+  function currentIslandSave() {
+    return {
+      state: JSON.parse(JSON.stringify(simulationState)),
+      history: JSON.parse(JSON.stringify(simulationHistory)),
+      redoHistory: JSON.parse(JSON.stringify(simulationRedoHistory)),
+      snapshots: JSON.parse(JSON.stringify(simulationSnapshots))
+    };
+  }
+  function islandSaveFor(islandId) {
+    if (islandId === activeIslandId) return { metadata: { ...islandMetadata }, terrain: { ...terrain }, simulation: currentIslandSave() };
+    try {
+      const metadata = JSON.parse(localStorage.getItem(islandStorageKey(islandId, 'island')) || 'null');
+      const terrainData = JSON.parse(localStorage.getItem(islandStorageKey(islandId, 'terrain')) || '{}');
+      const simulation = JSON.parse(localStorage.getItem(islandStorageKey(islandId, 'simulation')) || 'null');
+      if (!metadata || !simulation?.state || !terrainData) return null;
+      return { metadata, terrain: terrainData, simulation };
+    } catch { return null; }
+  }
+  function createLocalIsland(metadata, save, terrainData) {
+    if (islandLibrary.length >= 20) return toast('本機島嶼已達 20 座上限，請先刪除一座。');
+    const islandId = `island-${window.crypto?.randomUUID?.() || `${Date.now()}-${Math.floor(Math.random() * 1000000)}`}`;
+    const safeMetadata = {
+      name: String(metadata.name || '新島嶼').trim().slice(0, 80) || '新島嶼',
+      description: String(metadata.description || '').trim().slice(0, 500),
+      cover: islandCovers.includes(metadata.cover) ? metadata.cover : defaultIslandMetadata.cover
+    };
+    const normalizedState = EcosystemSimulation.syncHabitat(JSON.parse(JSON.stringify(save.state)), terrainData);
+    const simulationRecord = {
+      state: normalizedState,
+      history: (save.history || []).slice(-30),
+      redoHistory: (save.redoHistory || []).slice(-30),
+      snapshots: (save.snapshots || []).slice(0, 10)
+    };
+    const keys = [
+      [islandStorageKey(islandId, 'terrain'), JSON.stringify(terrainData)],
+      [islandStorageKey(islandId, 'simulation'), JSON.stringify(simulationRecord)],
+      [islandStorageKey(islandId, 'challenge'), null],
+      [islandStorageKey(islandId, 'island'), JSON.stringify(safeMetadata)]
+    ];
+    let previousLibrary;
+    let previousActive;
+    try {
+      previousLibrary = localStorage.getItem(islandLibraryStorageKey);
+      previousActive = localStorage.getItem(activeIslandStorageKey);
+    } catch { return toast('無法存取本機島嶼清單，沒有建立副本。'); }
+    const nextLibrary = [...islandLibrary, {
+      id: islandId, ...safeMetadata, day: normalizedState.day,
+      createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
+    }];
+    try {
+      keys.forEach(([key, value]) => value === null ? localStorage.removeItem(key) : localStorage.setItem(key, value));
+      localStorage.setItem(islandLibraryStorageKey, JSON.stringify(nextLibrary));
+      localStorage.setItem(activeIslandStorageKey, islandId);
+    } catch {
+      try {
+        keys.forEach(([key]) => localStorage.removeItem(key));
+        if (previousLibrary === null) localStorage.removeItem(islandLibraryStorageKey);
+        else localStorage.setItem(islandLibraryStorageKey, previousLibrary);
+        if (previousActive === null) localStorage.removeItem(activeIslandStorageKey);
+        else localStorage.setItem(activeIslandStorageKey, previousActive);
+      } catch { /* best effort cleanup for a partial local copy */ }
+      return toast('無法建立島嶼副本，請檢查瀏覽器儲存空間。');
+    }
+    window.location.reload();
+  }
+  function renderIslandLibrary() {
+    islandList.replaceChildren();
+    [...islandLibrary].sort((left, right) => (right.updatedAt || '').localeCompare(left.updatedAt || '')).forEach((island) => {
+      const row = document.createElement('div');
+      row.className = 'island-row';
+      const icon = document.createElement('span');
+      icon.className = 'island-row-cover';
+      icon.textContent = island.cover;
+      const details = document.createElement('div');
+      details.className = 'island-row-details';
+      const name = document.createElement('strong');
+      name.textContent = island.name;
+      const day = document.createElement('small');
+      day.textContent = `${island.id === activeIslandId ? simulationState.day : island.day || 24} 天${island.id === activeIslandId ? '・目前使用中' : ''}`;
+      details.append(name, day);
+      const actions = document.createElement('div');
+      actions.className = 'island-row-actions';
+      const open = document.createElement('button');
+      open.className = 'challenge-action';
+      open.textContent = island.id === activeIslandId ? '使用中' : '開啟';
+      open.disabled = island.id === activeIslandId;
+      open.dataset.islandAction = 'open';
+      open.dataset.islandId = island.id;
+      const copy = document.createElement('button');
+      copy.className = 'challenge-action';
+      copy.textContent = '複製';
+      copy.dataset.islandAction = 'copy';
+      copy.dataset.islandId = island.id;
+      const remove = document.createElement('button');
+      remove.className = 'challenge-action destructive-action';
+      remove.textContent = '刪除';
+      remove.disabled = island.id === activeIslandId || islandLibrary.length <= 1;
+      remove.dataset.islandAction = 'delete';
+      remove.dataset.islandId = island.id;
+      actions.append(open, copy, remove);
+      row.append(icon, details, actions);
+      islandList.appendChild(row);
+    });
+  }
+  function switchIsland(islandId) {
+    if (islandId === activeIslandId) return;
+    saveTerrain();
+    saveSimulation();
+    saveIslandMetadata(islandMetadata);
+    try {
+      localStorage.setItem(activeIslandStorageKey, islandId);
+      window.location.reload();
+    } catch { toast('無法切換島嶼，請檢查瀏覽器儲存空間。'); }
+  }
+  function deleteLocalIsland(islandId) {
+    if (islandId === activeIslandId || islandLibrary.length <= 1) return;
+    const island = islandLibrary.find((entry) => entry.id === islandId);
+    if (!island || !window.confirm(`刪除「${island.name}」及其本機模擬資料？此操作無法復原。建議先匯出備份。`)) return;
+    const nextLibrary = islandLibrary.filter((entry) => entry.id !== islandId);
+    try { localStorage.setItem(islandLibraryStorageKey, JSON.stringify(nextLibrary)); }
+    catch { return toast('島嶼清單未能保存，沒有刪除資料。'); }
+    islandLibrary = nextLibrary;
+    ['terrain', 'simulation', 'challenge', 'island'].forEach((type) => {
+      try { localStorage.removeItem(islandStorageKey(islandId, type)); } catch { /* 清單已移除，孤立資料不會再載入 */ }
+    });
+    renderIslandLibrary();
+  }
+  $('#manage-islands').addEventListener('click', () => {
+    persistIslandLibrary();
+    renderIslandLibrary();
+    islandsDialog.showModal();
+  });
+  $('#close-islands').addEventListener('click', () => islandsDialog.close());
+  $('#create-island').addEventListener('click', () => {
+    saveSimulation();
+    const name = `新島嶼 ${islandLibrary.length + 1}`;
+    const emptyTerrain = {};
+    createLocalIsland({ name, description: '從範例島開始，設計新的生態觀察。', cover: '🌿' },
+      { state: EcosystemSimulation.createInitialState(emptyTerrain), history: [], redoHistory: [], snapshots: [] }, emptyTerrain);
+  });
+  $('#duplicate-island').addEventListener('click', () => {
+    saveTerrain();
+    saveSimulation();
+    saveIslandMetadata(islandMetadata);
+    createLocalIsland({ ...islandMetadata, name: `${islandMetadata.name}（副本）`.slice(0, 80) }, currentIslandSave(), terrain);
+  });
+  islandList.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-island-action]');
+    if (!button) return;
+    const islandId = button.dataset.islandId;
+    if (button.dataset.islandAction === 'open') switchIsland(islandId);
+    if (button.dataset.islandAction === 'delete') deleteLocalIsland(islandId);
+    if (button.dataset.islandAction === 'copy') {
+      const source = islandSaveFor(islandId);
+      if (!source) return toast('無法讀取這座島的本機存檔。');
+      createLocalIsland({ ...source.metadata, name: `${source.metadata.name}（副本）`.slice(0, 80) }, source.simulation, source.terrain);
+    }
+  });
   function renderSnapshots() {
     snapshotList.replaceChildren();
     if (!simulationSnapshots.length) {
@@ -570,12 +783,17 @@
       restore.textContent = '載入';
       restore.dataset.snapshotAction = 'restore';
       restore.dataset.snapshotId = snapshot.id;
+      const branch = document.createElement('button');
+      branch.className = 'challenge-action';
+      branch.textContent = '分支';
+      branch.dataset.snapshotAction = 'branch';
+      branch.dataset.snapshotId = snapshot.id;
       const remove = document.createElement('button');
       remove.className = 'challenge-action destructive-action';
       remove.textContent = '刪除';
       remove.dataset.snapshotAction = 'delete';
       remove.dataset.snapshotId = snapshot.id;
-      actions.append(restore, remove);
+      actions.append(restore, branch, remove);
       row.append(info, actions);
       snapshotList.appendChild(row);
     });
@@ -621,6 +839,19 @@
       return;
     }
     const snapshot = simulationSnapshots[index];
+    if (action.dataset.snapshotAction === 'branch') {
+      const branchName = `${islandMetadata.name}・第 ${snapshot.day} 天分支`.slice(0, 80);
+      const branchSnapshot = {
+        id: `${Date.now()}-${snapshotSequence++}`,
+        day: snapshot.day,
+        createdAt: new Date().toISOString(),
+        state: snapshot.state,
+        terrain: snapshot.terrain
+      };
+      createLocalIsland({ ...islandMetadata, name: branchName },
+        { state: snapshot.state, history: [], redoHistory: [], snapshots: [branchSnapshot] }, snapshot.terrain);
+      return;
+    }
     if (!window.confirm(`載入第 ${snapshot.day} 天的快照？目前的模擬與地形會被替換。`)) return;
     pause();
     simulationState = JSON.parse(JSON.stringify(snapshot.state));
@@ -705,13 +936,14 @@
       localStorage.setItem(islandMetadataStorageKey, JSON.stringify(nextMetadata));
       islandMetadata = nextMetadata;
       renderIslandMetadata();
+      persistIslandLibrary();
       return true;
     } catch {
       return false;
     }
   }
   function renderStorageSummary() {
-    $('#storage-summary').textContent = `島嶼：${islandMetadata.name}；模擬進度：第 ${simulationState.day} 天；自訂地形：${Object.keys(terrain).length} 格。資料會自動保存在目前瀏覽器的本機儲存空間。`;
+    $('#storage-summary').textContent = `島嶼：${islandMetadata.name}；本機共有 ${islandLibrary.length} 座；模擬進度：第 ${simulationState.day} 天；自訂地形：${Object.keys(terrain).length} 格。資料會自動保存在目前瀏覽器的本機儲存空間。`;
   }
   function requestReset(kind) {
     pendingReset = kind;
@@ -838,6 +1070,7 @@
     simulationSnapshots = importedSnapshots;
     challengeStartDay = imported.challengeStartDay;
     islandMetadata = imported.formatVersion === 2 ? imported.metadata : { ...defaultIslandMetadata };
+    persistIslandLibrary();
     undoStack = [];
     redoStack = [];
     selectedCell = null;

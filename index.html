@@ -87,7 +87,7 @@
     <div class="tutorial-topline"><span class="section-kicker">本機資料</span><button id="close-storage" class="tutorial-skip">關閉</button></div>
     <h2 id="storage-title">存檔管理</h2>
     <p id="storage-summary" class="tutorial-copy"></p>
-    <div class="storage-actions"><button id="save-now" class="challenge-action">立即保存</button><button id="edit-island-profile" class="challenge-action">編輯島嶼名稱與封面</button><button id="export-save" class="challenge-action">匯出島嶼存檔</button><button id="import-save" class="challenge-action">匯入島嶼存檔</button><input id="import-file" type="file" accept=".json,application/json" hidden><button id="restart-simulation" class="challenge-action">重新開始模擬</button><button id="restore-terrain" class="challenge-action destructive-action">還原範例地形</button></div>
+    <div class="storage-actions"><button id="save-now" class="challenge-action">立即保存</button><button id="manage-islands" class="challenge-action">管理我的島嶼</button><button id="edit-island-profile" class="challenge-action">編輯島嶼名稱與封面</button><button id="export-save" class="challenge-action">匯出島嶼存檔</button><button id="import-save" class="challenge-action">匯入島嶼存檔</button><input id="import-file" type="file" accept=".json,application/json" hidden><button id="restart-simulation" class="challenge-action">重新開始模擬</button><button id="restore-terrain" class="challenge-action destructive-action">還原範例地形</button></div>
     <p class="storage-note">地形、模擬與島嶼資料會自動保存在此瀏覽器。匯出可建立 JSON 備份；匯入會取代目前地形、模擬、快照、挑戰與島嶼資料。重新開始模擬會保留自訂地形；還原範例地形會清除地形筆刷修改。</p>
   </dialog>
   <dialog id="island-profile-dialog" class="tutorial-dialog storage-dialog" aria-labelledby="island-profile-title">
@@ -98,6 +98,13 @@
     <label class="profile-field">封面圖示<select id="island-cover-input"><option value="🌴">🌴 棕櫚島</option><option value="🌿">🌿 綠意島</option><option value="🌊">🌊 海灣島</option><option value="🏝️">🏝️ 沙洲島</option><option value="🌳">🌳 森林島</option></select></label>
     <p class="storage-note">資料只保存在目前瀏覽器。公開分享設定會等雲端帳號和隱私規則完成後再提供。</p>
     <div class="tutorial-actions"><button id="save-island-profile" class="play-button">保存資料</button></div>
+  </dialog>
+  <dialog id="islands-dialog" class="tutorial-dialog storage-dialog" aria-labelledby="islands-title">
+    <div class="tutorial-topline"><span class="section-kicker">此裝置・本機島嶼</span><button id="close-islands" class="tutorial-skip">關閉</button></div>
+    <h2 id="islands-title">我的島嶼</h2>
+    <div id="island-list" class="island-list"></div>
+    <div class="island-create-actions"><button id="create-island" class="challenge-action">建立範例島</button><button id="duplicate-island" class="challenge-action">複製目前島嶼</button></div>
+    <p class="storage-note">複製與快照分支目前保存在此瀏覽器。登入與跨裝置同步會在雲端服務接好後提供。</p>
   </dialog>
   <dialog id="reset-dialog" class="tutorial-dialog" aria-labelledby="reset-title">
     <div class="tutorial-topline"><span class="section-kicker">請確認操作</span><button id="cancel-reset" class="tutorial-skip">取消</button></div>
